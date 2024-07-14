@@ -166,7 +166,7 @@ def load_data():
     unique_trips.loc[(unique_trips.delay_minutes >4) & (unique_trips.delay_minutes <=15),'delay_severity'] = 'Minor'
     unique_trips.loc[(unique_trips.delay_minutes >15),'delay_severity'] = 'Major'
     unique_trips['delay_severity'].fillna('On Time', inplace=True)
-
+    unique_trips.loc[unique_trips.delay_minutes < 0,'delay_minutes']=0
     # Calculate percentage of delays by severity
     delay_severity_counts = unique_trips['delay_severity'].value_counts(normalize=True) * 100
     delay_severity_counts = delay_severity_counts.reset_index()
