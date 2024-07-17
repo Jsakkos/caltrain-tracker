@@ -151,7 +151,7 @@ def load_data():
     comparison_df = pd.merge(arrival_times, df2[['trip_id', 'stop_id', 'stop_name','parent_station','date', 'arrival_time']], on=['trip_id', 'stop_id', 'date'])
     # Calculate the delay in minutes
     comparison_df['delay_minutes'] = comparison_df.apply(
-        lambda row: calculate_time_difference(row['actual_arrival_time'].time(), row['arrival_time']), axis=1
+        lambda row: calculate_time_difference( row['arrival_time'],row['actual_arrival_time'].time(),), axis=1
     )
     comparison_df.loc[comparison_df.delay_minutes > 500,'delay_minutes'] = 0.0
     comparison_df.loc[comparison_df.delay_minutes < -100,'delay_minutes'] = 0.0
@@ -287,9 +287,10 @@ def create_figures(df, unique_trips, on_time_performance, delay_severity_counts)
                 category_orders={'Status': status_order},
                 color_discrete_map=status_colors,labels={'date': 'Date', 'percentage': 'Percentage','Minor':'Minor Delay'})
 
-    fig_delay_minutes = px.histogram(unique_trips.loc[unique_trips.delay_minutes >=5], x='delay_minutes', color="commute_period", barmode='overlay',
-                                    title="Trip delay durations",
-                                    labels={'commute_period': 'Commute Period','delay_minutes': 'Trip delay (mins)','count': "Number of trips"})
+    fig_delay_minutes = fig = px.histogram(unique_trips.loc[unique_trips.delay_minutes >=1],x='delay_minutes', color="commute_period",barmode='overlay',marginal="box", 
+                        hover_data=unique_trips.columns,
+                        title="Trip delay durations",
+                        labels={'commute_period': 'Commute Period','delay_minutes': 'Trip delay (mins)','count': "Number of trips"})
 
     # Create heatmap
     unique_trips['parent_station'] = unique_trips['parent_station'].apply(clean_station_name)
