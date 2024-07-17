@@ -287,7 +287,7 @@ def create_figures(df, unique_trips, on_time_performance, delay_severity_counts)
                 category_orders={'Status': status_order},
                 color_discrete_map=status_colors,labels={'date': 'Date', 'percentage': 'Percentage','Minor':'Minor Delay'})
 
-    fig_delay_minutes = fig = px.histogram(unique_trips.loc[unique_trips.delay_minutes >=1],x='delay_minutes', color="commute_period",barmode='overlay',marginal="box", 
+    fig_delay_minutes = px.histogram(unique_trips.loc[unique_trips.delay_minutes >=1],x='delay_minutes', color="commute_period",barmode='overlay',marginal="box", 
                         hover_data=unique_trips.columns,
                         title="Trip delay durations",
                         labels={'commute_period': 'Commute Period','delay_minutes': 'Trip delay (mins)','count': "Number of trips"})
