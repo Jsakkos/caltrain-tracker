@@ -377,7 +377,9 @@ app.layout = html.Div([
 ])
 home_layout = html.Div([
     html.H1("Caltrain On-Time Performance"),
-    html.Div(id="on-time-performance"),
+    dbc.Row([
+        dbc.Col(html.Div(id="on-time-performance"), width={"size": 6, "offset": 3}),
+    ], className="mb-4"),
     html.Div(id="delay-severity-graph-container"),
     html.Div(id="commute-delay-graph-container"),
     html.Div(id="delay-minutes-graph-container"),
@@ -431,9 +433,17 @@ def update_graphs(n, pathname):
     
     df, stops_df, stop_times_df, unique_trips, on_time_performance, delay_severity_counts = load_data()
     fig, fig_commute_delay, fig_delay_minutes, fig_heatmap = create_figures(df, unique_trips, on_time_performance, delay_severity_counts)
+    on_time_card = dbc.Card(
+        dbc.CardBody([
+            html.H4("Overall On-Time Performance", className="card-title"),
+            html.H2(f"{on_time_performance:.2f}%", className="card-text text-center"),
+            html.P("Percentage of trains arriving on time", className="card-text text-muted")
+        ]),
+        className="mb-4"
+    )
     
     return (
-        f"{on_time_performance:.2f}%",
+        on_time_card,
         dcc.Graph(figure=fig),
         dcc.Graph(figure=fig_commute_delay),
         dcc.Graph(figure=fig_delay_minutes),
