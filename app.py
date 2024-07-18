@@ -341,14 +341,12 @@ def create_figures(df, unique_trips, on_time_performance, delay_severity_counts)
     # Ensure x-axis shows all hours from 0 to 23
     fig_hourly_delays.update_xaxes(range=[-0.5, 23.5])
     fig_commute_delay.update_layout(
-    height=400,  # Adjust as needed
-    width=600,   # Adjust as needed
-    margin=dict(l=50, r=50, t=50, b=50)
+        title="Delays by Commute Period and Severity",
+        margin=dict(l=50, r=50, t=50, b=50)
     )
 
     fig_hourly_delays.update_layout(
-        height=400,  # Adjust as needed
-        width=600,   # Adjust as needed
+        title="Average Delay by Hour",
         margin=dict(l=50, r=50, t=50, b=50)
     )
     fig_commute_delay.update_layout(
@@ -387,6 +385,7 @@ CONTENT_STYLE = {
     "margin-left": "18rem",
     "margin-right": "2rem",
     "padding": "2rem 1rem",
+    "flex-grow": "1"
 }
 
 sidebar = html.Div(
@@ -411,7 +410,7 @@ sidebar = html.Div(
 
 content = html.Div(id="page-content", style=CONTENT_STYLE)
 
-app.layout = html.Div([
+app.layout = dbc.Container([
     dcc.Location(id="url"),
     sidebar,
     html.Div(id="page-content", style=CONTENT_STYLE),
@@ -420,7 +419,7 @@ app.layout = html.Div([
         interval=60*1000,  # in milliseconds, update every 60 seconds
         n_intervals=0
     )
-])
+], fluid=True)
 home_layout = html.Div([
     html.H1("Caltrain On-Time Performance"),
     dbc.Row([
@@ -488,8 +487,8 @@ def update_graphs(n, pathname):
         className="mb-4"
     )
     commute_and_hourly_row = dbc.Row([
-        dbc.Col(dcc.Graph(figure=fig_commute_delay), width=6),
-        dbc.Col(dcc.Graph(figure=fig_hourly_delays), width=6)
+        dbc.Col(dcc.Graph(figure=fig_commute_delay, config={'responsive': True}), style={"min-height": "400px"}),
+        dbc.Col(dcc.Graph(figure=fig_hourly_delays, config={'responsive': True}), style={"min-height": "400px"})
     ])
     return (
         on_time_card,
