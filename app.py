@@ -450,19 +450,19 @@ app.layout = dbc.Container([
 home_layout = html.Div([
     html.H1("Caltrain On-Time Performance"),
     dbc.Row([
-        dbc.Col(html.Div(id="on-time-performance"), width={"size": 6, "offset": 3}),
+        dbc.Col(html.Div(id="on-time-performance"), width={"size": 3, "offset": 0}),
     ], className="mb-4"),
     dbc.Row([
-        dbc.Col(html.Div(id="best-train"), width={"size": 4, "offset": 3}),
+        dbc.Col(html.Div(id="best-train"), width={"size": 3, "offset": 0}),
     ], className="mb-4"),
         dbc.Row([
-        dbc.Col(html.Div(id="worst-train"), width={"size": 4, "offset": 3}),
+        dbc.Col(html.Div(id="worst-train"), width={"size": 3, "offset": 0}),
     ], className="mb-4"),
     dbc.Row([
-        dbc.Col(html.Div(id="best-stop"), width={"size": 4, "offset": 3}),
+        dbc.Col(html.Div(id="best-stop"), width={"size": 3, "offset": 0}),
     ], className="mb-4"),
         dbc.Row([
-        dbc.Col(html.Div(id="worst-stop"), width={"size": 4, "offset": 3}),
+        dbc.Col(html.Div(id="worst-stop"), width={"size": 3, "offset": 0}),
     ], className="mb-4"),
     html.Div(id="delay-severity-graph-container"),
     html.Div(id="commute-delay-graph-container"),  # This will now contain both graphs
@@ -524,7 +524,7 @@ def update_graphs(n, pathname):
     on_time_card = dbc.Card(
         dbc.CardBody([
             html.H4("Overall On-Time Performance", className="card-title"),
-            html.H2(f"{on_time_performance:.2f}%", className="card-text text-center"),
+            html.H3(f"{on_time_performance:.2f}%", className="card-text text-center"),
             html.P("Percentage of trains arriving on time", className="card-text text-muted")
         ]),
         className="mb-4"
@@ -532,28 +532,28 @@ def update_graphs(n, pathname):
     best_train_card = dbc.Card(
         dbc.CardBody([
             html.H4("Most on-time", className="card-title"),
-            html.H2(f"Train {best_train} - Average delay {best_train_delay_minutes:.2f}", className="card-text text-center"),
+            html.H3(f"Train {best_train} - Average delay {best_train_delay_minutes:.2f}", className="card-text text-center"),
         ]),
         className="mb-4"
     )
     worst_train_card = dbc.Card(
         dbc.CardBody([
             html.H4("Most delayed", className="card-title"),
-            html.H2(f"Train {worst_train} - Average delay {worst_train_delay_minutes:.2f}", className="card-text text-center"),
+            html.H3(f"Train {worst_train} - Average delay {worst_train_delay_minutes:.2f}", className="card-text text-center"),
         ]),
         className="mb-4"
     )
     best_stop_card= dbc.Card(
         dbc.CardBody([
             html.H4("Most on-time", className="card-title"),
-            html.H2(f"{best_stop} - Average delay {best_stop_delay_minutes:.2f}", className="card-text text-center"),
+            html.H3(f"{best_stop} - Average delay {best_stop_delay_minutes:.2f}", className="card-text text-center"),
         ]),
         className="mb-4"
     )
     worst_stop_card= dbc.Card(
         dbc.CardBody([
             html.H4("Most delayed", className="card-title"),
-            html.H2(f"{worst_stop} - Average delay {worst_stop_delay_minutes:.2f}", className="card-text text-center"),
+            html.H3(f"{worst_stop} - Average delay {worst_stop_delay_minutes:.2f}", className="card-text text-center"),
         ]),
         className="mb-4"
     )
