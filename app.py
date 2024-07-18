@@ -262,7 +262,7 @@ def create_figures(df, unique_trips, on_time_performance, delay_severity_counts)
     # Create the figures
     fig_commute_delay = px.bar(commute_delay_counts, x='commute_period', y='percentage', color='delay_severity',
                             title="Percentage of Morning and Evening Commutes with Delays by Severity",
-                            labels={'commute_period': 'Commute Period', 'percentage': 'Percentage', 'delay_severity': 'Delay Severity'},
+                            labels={'commute_period': 'Commute Period', 'percentage': 'Percentage', 'delay_severity': 'Delay Severity','Minor':'Minor Delay','Major':'Major Delay'},
                             color_discrete_map=status_colors,)
     for trace in fig_commute_delay.data:
         if trace.name == 'On Time':
