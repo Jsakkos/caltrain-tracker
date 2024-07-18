@@ -249,6 +249,8 @@ def create_figures(df, unique_trips, on_time_performance, delay_severity_counts)
     # Define custom colors for each Status
     status_colors = {
         'On Time': '#00CC96',
+        'Minor': '#FECB52',
+        'Major': '#EF553B',
         'Minor Delay': '#FECB52',
         'Major Delay': '#EF553B'
     }
@@ -262,8 +264,8 @@ def create_figures(df, unique_trips, on_time_performance, delay_severity_counts)
     # Create the figures
     fig_commute_delay = px.bar(commute_delay_counts, x='commute_period', y='percentage', color='delay_severity',
                             title="Percentage of Morning and Evening Commutes with Delays by Severity",
-                            labels={'commute_period': 'Commute Period', 'percentage': 'Percentage', 'delay_severity': 'Delay Severity','Minor':'Minor Delay','Major':'Major Delay'},
-                            color_discrete_map=status_colors,)
+                            labels={'commute_period': 'Commute Period', 'percentage': 'Percentage', 'delay_severity': 'Delay Severity'},
+                            color_discrete_map=status_colors,category_orders={'Commute Period': ['Morning', 'Evening']})
     for trace in fig_commute_delay.data:
         if trace.name == 'On Time':
             trace.visible = 'legendonly'
@@ -352,7 +354,17 @@ def create_figures(df, unique_trips, on_time_performance, delay_severity_counts)
     fig_commute_delay.update_layout(
     title="Delays by Commute Period and Severity"
     )
+    fig_commute_delay.update_layout(
+        legend_title_text='Delay Severity',
+        legend={'traceorder': 'reversed'}
+    )
+    fig_commute_delay.for_each_trace(lambda t: t.update(name=t.name + ' Delay') if t.name in ['Minor', 'Major'] else t)
 
+    fig.update_layout(
+        legend_title_text='Status',
+        legend={'traceorder': 'reversed'}
+    )
+    fig.for_each_trace(lambda t: t.update(name=t.name + ' Delay') if t.name in ['Minor', 'Major'] else t)
     fig_hourly_delays.update_layout(
         title="Average Delay by Hour"
     )
