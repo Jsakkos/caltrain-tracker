@@ -187,7 +187,23 @@ def load_data():
 
     # Calculate percentage of delays by commute period and severity
     commute_delay_counts['percentage'] = (commute_delay_counts['counts'] / commute_delay_counts['total_counts']) * 100
-    return df, stops_df, stop_times_df, unique_trips, on_time_performance, delay_severity_counts
+
+    # Calculate the best/worst trains/stops
+    best_train=unique_trips.groupby('trip_id')['delay_minutes'].mean().reset_index()
+    best_train_delay_minutes = float(best_train.sort_values(by='delay_minutes').reset_index(drop=True).iloc[0,1])
+    best_train = int(best_train.sort_values(by='delay_minutes').reset_index(drop=True).iloc[0,0])
+    worst_train=unique_trips.groupby('trip_id')['delay_minutes'].mean().reset_index()
+    worst_train_delay_minutes = float(worst_train.sort_values(by='delay_minutes',ascending=False).reset_index(drop=True).iloc[0,1])
+    worst_train = int(worst_train.sort_values(by='delay_minutes',ascending=False).reset_index(drop=True).iloc[0,0])
+    best_stop=unique_trips.groupby('stop_id')['delay_minutes'].mean().reset_index()
+    best_stop_delay_minutes = float(best_stop.sort_values(by='delay_minutes').reset_index(drop=True).iloc[0,1])
+    best_stop = int(best_stop.sort_values(by='delay_minutes').reset_index(drop=True).iloc[0,0])
+    best_stop=unique_trips.loc[unique_trips.stop_id==best_stop,'stop_name'].reset_index(drop=True).iloc[0]
+    worst_stop=unique_trips.groupby('stop_id')['delay_minutes'].mean().reset_index()
+    worst_stop_delay_minutes = float(worst_stop.sort_values(by='delay_minutes',ascending=False).reset_index(drop=True).iloc[0,1])
+    worst_stop = int(worst_stop.sort_values(by='delay_minutes',ascending=False).reset_index(drop=True).iloc[0,0])
+    worst_stop=unique_trips.loc[unique_trips.stop_id==worst_stop,'stop_name'].reset_index(drop=True).iloc[0]
+    return df, stops_df, stop_times_df, unique_trips, on_time_performance, best_train,best_train_delay_minutes, worst_train,worst_train_delay_minutes,best_stop,best_stop_delay_minutes,worst_stop,worst_stop_delay_minutes,delay_severity_counts
 
 def load_stops_data():
     stops_df = pd.read_csv(os.path.join(GTFS_PATH, 'stops.txt'))
@@ -245,7 +261,7 @@ def categorize_commute_time(timestamp):
         return 'Evening'
     else:
         return 'Other'
-def create_figures(df, unique_trips, on_time_performance, delay_severity_counts):
+def create_figures(unique_trips):
     # Define custom colors for each Status
     status_colors = {
         'On Time': '#00CC96',
@@ -368,7 +384,6 @@ def create_figures(df, unique_trips, on_time_performance, delay_severity_counts)
     fig_hourly_delays.update_layout(
         title="Average Delay by Hour"
     )
-
     return fig, fig_commute_delay, fig_delay_minutes, fig_heatmap, fig_hourly_delays
 
 def clean_station_name(name):
@@ -477,6 +492,10 @@ def render_page_content(pathname):
 
 @app.callback(
     [Output("on-time-performance", "children"),
+     Output("best-train", "children"),     
+     Output("worst-train", "children"), 
+     Output("best-stop", "children"),    
+     Output("worst-stop", "children"),       
      Output("delay-severity-graph-container", "children"),
      Output("commute-delay-graph-container", "children"),
      Output("delay-minutes-graph-container", "children"),
@@ -488,13 +507,41 @@ def update_graphs(n, pathname):
     if pathname != "/":
         return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
     
-    df, stops_df, stop_times_df, unique_trips, on_time_performance, delay_severity_counts = load_data()
-    fig, fig_commute_delay, fig_delay_minutes, fig_heatmap, fig_hourly_delays = create_figures(df, unique_trips, on_time_performance, delay_severity_counts)
+    df, stops_df, stop_times_df, unique_trips, on_time_performance, best_train,best_train_delay_minutes, worst_train,worst_train_delay_minutes,best_stop,best_stop_delay_minutes,worst_stop,worst_stop_delay_minutes,delay_severity_counts = load_data()
+    fig, fig_commute_delay, fig_delay_minutes, fig_heatmap, fig_hourly_delays = create_figures(unique_trips)
     on_time_card = dbc.Card(
         dbc.CardBody([
             html.H4("Overall On-Time Performance", className="card-title"),
             html.H2(f"{on_time_performance:.2f}%", className="card-text text-center"),
             html.P("Percentage of trains arriving on time", className="card-text text-muted")
+        ]),
+        className="mb-4"
+    )
+    best_train_card = dbc.Card(
+        dbc.CardBody([
+            html.H4("Most on-time", className="card-title"),
+            html.H2(f"Train {best_train} - Average delay {best_train_delay_minutes:.2f}", className="card-text text-center"),
+        ]),
+        className="mb-4"
+    )
+    worst_train_card = dbc.Card(
+        dbc.CardBody([
+            html.H4("Most delayed", className="card-title"),
+            html.H2(f"Train {worst_train} - Average delay {worst_train_delay_minutes:.2f}", className="card-text text-center"),
+        ]),
+        className="mb-4"
+    )
+    best_stop_card= dbc.Card(
+        dbc.CardBody([
+            html.H4("Most on-time", className="card-title"),
+            html.H2(f"{best_stop} - Average delay {best_stop_delay_minutes:.2f}", className="card-text text-center"),
+        ]),
+        className="mb-4"
+    )
+    worst_stop_card= dbc.Card(
+        dbc.CardBody([
+            html.H4("Most delayed", className="card-title"),
+            html.H2(f"{worst_stop} - Average delay {worst_stop_delay_minutes:.2f}", className="card-text text-center"),
         ]),
         className="mb-4"
     )
@@ -504,6 +551,10 @@ def update_graphs(n, pathname):
     ])
     return (
         on_time_card,
+        best_train_card,
+        worst_train_card,
+        best_stop_card,
+        worst_stop_card,
         dcc.Graph(figure=fig),
         commute_and_hourly_row,
         dcc.Graph(figure=fig_delay_minutes),
