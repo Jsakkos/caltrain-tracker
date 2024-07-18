@@ -172,7 +172,7 @@ def load_data():
     delay_severity_counts = delay_severity_counts.reset_index()
     delay_severity_counts.columns = ['delay_severity', 'percentage']
     unique_trips['commute_period'] =unique_trips['actual_arrival_time'].apply(categorize_commute_time)
-
+    unique_trips['hour'] = pd.to_datetime(unique_trips['actual_arrival_time']).dt.hour
     # Filter for Morning and Evening commutes
     filtered_trips = unique_trips[unique_trips['commute_period'].isin(['Morning', 'Evening'])]
 
@@ -246,6 +246,12 @@ def categorize_commute_time(timestamp):
     else:
         return 'Other'
 def create_figures(df, unique_trips, on_time_performance, delay_severity_counts):
+    # Define custom colors for each Status
+    status_colors = {
+        'On Time': '#00CC96',
+        'Minor Delay': '#FECB52',
+        'Major Delay': '#EF553B'
+    }
     # Calculate commute_delay_counts
     filtered_trips = unique_trips[unique_trips['commute_period'].isin(['Morning', 'Evening'])]
     total_commute_period_trips = filtered_trips.groupby('commute_period').size().reset_index(name='total_counts')
@@ -256,7 +262,8 @@ def create_figures(df, unique_trips, on_time_performance, delay_severity_counts)
     # Create the figures
     fig_commute_delay = px.bar(commute_delay_counts, x='commute_period', y='percentage', color='delay_severity',
                             title="Percentage of Morning and Evening Commutes with Delays by Severity",
-                            labels={'commute_period': 'Commute Period', 'percentage': 'Percentage', 'delay_severity': 'Delay Severity'})
+                            labels={'commute_period': 'Commute Period', 'percentage': 'Percentage', 'delay_severity': 'Delay Severity'},
+                            color_discrete_map=status_colors,)
     for trace in fig_commute_delay.data:
         if trace.name == 'On Time':
             trace.visible = 'legendonly'
@@ -274,12 +281,7 @@ def create_figures(df, unique_trips, on_time_performance, delay_severity_counts)
     status_order = ['On Time', 'Minor Delay', 'Major Delay']
     daily_summary_melted.loc[daily_summary_melted.Status == 'Major','Status']='Major Delay'
     daily_summary_melted.loc[daily_summary_melted.Status == 'Minor','Status']='Minor Delay'
-    # Define custom colors for each Status
-    status_colors = {
-        'On Time': '#00CC96',
-        'Minor Delay': '#FECB52',
-        'Major Delay': '#EF553B'
-    }
+
 
     # Create the stacked bar plot
     fig = px.bar(daily_summary_melted, x='date', y='Percentage', color='Status', 
@@ -313,7 +315,51 @@ def create_figures(df, unique_trips, on_time_performance, delay_severity_counts)
         height = 1000,
     )
 
-    return fig, fig_commute_delay, fig_delay_minutes, fig_heatmap
+    # Calculate average delay by hour
+    hourly_delays = unique_trips.groupby('hour')['delay_minutes'].mean().reset_index()
+
+    # Create the histogram
+    fig_hourly_delays = px.bar(hourly_delays, x='hour', y='delay_minutes',
+                            labels={'hour': 'Hour of Day', 'delay_minutes': 'Average Delay (minutes)'},
+                            title='Average Delay by Hour of Day')
+
+    # Customize the layout
+    fig_hourly_delays.update_layout(
+        xaxis = dict(
+            tickmode = 'linear',
+            tick0 = 0,
+            dtick = 1
+        )
+    )
+
+    # Add a horizontal line for the overall average delay
+    overall_avg_delay = unique_trips['delay_minutes'].mean()
+    fig_hourly_delays.add_hline(y=overall_avg_delay, line_dash="dash", line_color="red",
+                                annotation_text=f"Overall Average: {overall_avg_delay:.2f} min",
+                                annotation_position="bottom right")
+
+    # Ensure x-axis shows all hours from 0 to 23
+    fig_hourly_delays.update_xaxes(range=[-0.5, 23.5])
+    fig_commute_delay.update_layout(
+    height=400,  # Adjust as needed
+    width=600,   # Adjust as needed
+    margin=dict(l=50, r=50, t=50, b=50)
+    )
+
+    fig_hourly_delays.update_layout(
+        height=400,  # Adjust as needed
+        width=600,   # Adjust as needed
+        margin=dict(l=50, r=50, t=50, b=50)
+    )
+    fig_commute_delay.update_layout(
+    title="Delays by Commute Period and Severity"
+    )
+
+    fig_hourly_delays.update_layout(
+        title="Average Delay by Hour"
+    )
+
+    return fig, fig_commute_delay, fig_delay_minutes, fig_heatmap, fig_hourly_delays
 
 def clean_station_name(name):
     if name == 'place_MLBR':
@@ -381,7 +427,7 @@ home_layout = html.Div([
         dbc.Col(html.Div(id="on-time-performance"), width={"size": 6, "offset": 3}),
     ], className="mb-4"),
     html.Div(id="delay-severity-graph-container"),
-    html.Div(id="commute-delay-graph-container"),
+    html.Div(id="commute-delay-graph-container"),  # This will now contain both graphs
     html.Div(id="delay-minutes-graph-container"),
     html.Div(id="heatmap-graph-container")
 ])
@@ -432,7 +478,7 @@ def update_graphs(n, pathname):
         return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
     
     df, stops_df, stop_times_df, unique_trips, on_time_performance, delay_severity_counts = load_data()
-    fig, fig_commute_delay, fig_delay_minutes, fig_heatmap = create_figures(df, unique_trips, on_time_performance, delay_severity_counts)
+    fig, fig_commute_delay, fig_delay_minutes, fig_heatmap, fig_hourly_delays = create_figures(df, unique_trips, on_time_performance, delay_severity_counts)
     on_time_card = dbc.Card(
         dbc.CardBody([
             html.H4("Overall On-Time Performance", className="card-title"),
@@ -441,11 +487,14 @@ def update_graphs(n, pathname):
         ]),
         className="mb-4"
     )
-    
+    commute_and_hourly_row = dbc.Row([
+        dbc.Col(dcc.Graph(figure=fig_commute_delay), width=6),
+        dbc.Col(dcc.Graph(figure=fig_hourly_delays), width=6)
+    ])
     return (
         on_time_card,
         dcc.Graph(figure=fig),
-        dcc.Graph(figure=fig_commute_delay),
+        commute_and_hourly_row,
         dcc.Graph(figure=fig_delay_minutes),
         dcc.Graph(figure=fig_heatmap)
     )
