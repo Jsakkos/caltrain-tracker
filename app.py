@@ -452,6 +452,18 @@ home_layout = html.Div([
     dbc.Row([
         dbc.Col(html.Div(id="on-time-performance"), width={"size": 6, "offset": 3}),
     ], className="mb-4"),
+    dbc.Row([
+        dbc.Col(html.Div(id="best-train"), width={"size": 4, "offset": 3}),
+    ], className="mb-4"),
+        dbc.Row([
+        dbc.Col(html.Div(id="worst-train"), width={"size": 4, "offset": 3}),
+    ], className="mb-4"),
+    dbc.Row([
+        dbc.Col(html.Div(id="best-stop"), width={"size": 4, "offset": 3}),
+    ], className="mb-4"),
+        dbc.Row([
+        dbc.Col(html.Div(id="worst-stop"), width={"size": 4, "offset": 3}),
+    ], className="mb-4"),
     html.Div(id="delay-severity-graph-container"),
     html.Div(id="commute-delay-graph-container"),  # This will now contain both graphs
     html.Div(id="delay-minutes-graph-container"),
