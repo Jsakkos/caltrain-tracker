@@ -452,9 +452,9 @@ home_layout = html.Div([
     dbc.Row([
         dbc.Col(html.Div(id="on-time-performance"), width={"size": 3, "offset": 0}),
     ], className="mb-4"),
-    html.Div(id="delay-severity-graph-container"),
     html.Div(id="best-train-graph-container"),
     html.Div(id="best-stop-graph-container"),
+    html.Div(id="delay-severity-graph-container"),
     html.Div(id="commute-delay-graph-container"),  # This will now contain both graphs
     html.Div(id="delay-minutes-graph-container"),
     html.Div(id="heatmap-graph-container")
@@ -509,14 +509,18 @@ def update_graphs(n, pathname):
     
     df, stops_df, stop_times_df, unique_trips, on_time_performance, best_train,best_train_delay_minutes, worst_train,worst_train_delay_minutes,best_stop,best_stop_delay_minutes,worst_stop,worst_stop_delay_minutes,delay_severity_counts = load_data()
     fig, fig_commute_delay, fig_delay_minutes, fig_heatmap, fig_hourly_delays = create_figures(unique_trips)
-    on_time_card = dbc.Card(
-        dbc.CardBody([
-            html.H4("Overall On-Time Performance", className="card-title"),
-            html.H3(f"{on_time_performance:.2f}%", className="card-text text-center"),
-            html.P("Percentage of trains arriving on time", className="card-text text-muted")
-        ]),
-        className="mb-4"
-    )
+    on_time_card = [
+    dbc.CardHeader("Overall On-Time Performance"),
+    dbc.CardBody(
+        [
+            html.H5(f"{on_time_performance:.2f}%", className="card-title"),
+            html.P(
+                "Percentage of trains arriving on time",
+                className="card-text",
+            ),
+        ]
+    ),
+    ]
     best_train_card = dbc.Card(
         dbc.CardBody([
             html.H4("Most on-time", className="card-title"),
