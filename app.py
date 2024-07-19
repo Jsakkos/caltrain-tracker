@@ -452,19 +452,9 @@ home_layout = html.Div([
     dbc.Row([
         dbc.Col(html.Div(id="on-time-performance"), width={"size": 3, "offset": 0}),
     ], className="mb-4"),
-    dbc.Row([
-        dbc.Col(html.Div(id="best-train"), width={"size": 3, "offset": 0}),
-    ], className="mb-4"),
-        dbc.Row([
-        dbc.Col(html.Div(id="worst-train"), width={"size": 3, "offset": 0}),
-    ], className="mb-4"),
-    dbc.Row([
-        dbc.Col(html.Div(id="best-stop"), width={"size": 3, "offset": 0}),
-    ], className="mb-4"),
-        dbc.Row([
-        dbc.Col(html.Div(id="worst-stop"), width={"size": 3, "offset": 0}),
-    ], className="mb-4"),
     html.Div(id="delay-severity-graph-container"),
+    html.Div(id="best-train-graph-container"),
+    html.Div(id="best-stop-graph-container"),
     html.Div(id="commute-delay-graph-container"),  # This will now contain both graphs
     html.Div(id="delay-minutes-graph-container"),
     html.Div(id="heatmap-graph-container")
@@ -504,10 +494,8 @@ def render_page_content(pathname):
 
 @app.callback(
     [Output("on-time-performance", "children"),
-     Output("best-train", "children"),     
-     Output("worst-train", "children"), 
-     Output("best-stop", "children"),    
-     Output("worst-stop", "children"),       
+     Output("best-train-graph-container", "children"),     
+     Output("best-stop-graph-container", "children"),       
      Output("delay-severity-graph-container", "children"),
      Output("commute-delay-graph-container", "children"),
      Output("delay-minutes-graph-container", "children"),
@@ -557,16 +545,22 @@ def update_graphs(n, pathname):
         ]),
         className="mb-4"
     )
+    best_worst_train_card= dbc.Row([
+        dbc.Col(best_train_card),
+        dbc.Col(worst_train_card)
+    ])
+    best_worst_stop_card= dbc.Row([
+        dbc.Col(best_stop_card),
+        dbc.Col(worst_stop_card)
+    ])
     commute_and_hourly_row = dbc.Row([
         dbc.Col(dcc.Graph(figure=fig_commute_delay, config={'responsive': True}), style={"min-height": "400px"}),
         dbc.Col(dcc.Graph(figure=fig_hourly_delays, config={'responsive': True}), style={"min-height": "400px"})
     ])
     return (
         on_time_card,
-        best_train_card,
-        worst_train_card,
-        best_stop_card,
-        worst_stop_card,
+        best_worst_train_card,
+        best_worst_stop_card,
         dcc.Graph(figure=fig),
         commute_and_hourly_row,
         dcc.Graph(figure=fig_delay_minutes),
