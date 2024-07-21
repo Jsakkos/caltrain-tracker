@@ -520,14 +520,16 @@ def update_graphs(n, pathname):
             ),
         ]
     ),
-    ], color="light", inverse=True)
-    best_train_card = dbc.Card(
-        dbc.CardBody([
-            html.H4("Most on-time", className="card-title"),
-            html.H3(f"Train {best_train} - Average delay {best_train_delay_minutes:.2f}", className="card-text text-center"),
+    ], color="light")
+
+    best_train_card = dbc.Card([
+    dbc.CardHeader("Most on-time train"),
+    dbc.CardBody(
+        [
+            html.H5(f"Train {best_train} - Average delay {best_train_delay_minutes:.2f}", className="card-title"),
         ]),
-        className="mb-4"
-    )
+
+    ], color="light")
     worst_train_card = dbc.Card(
         dbc.CardBody([
             html.H4("Most delayed", className="card-title"),
