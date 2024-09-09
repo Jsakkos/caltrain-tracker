@@ -3,7 +3,7 @@ import sqlite3
 import os
 import json
 from datetime import datetime, timedelta
-
+import time
 API_KEY = os.environ.get('API_KEY')
 DB_PATH = os.environ.get('DB_PATH', '/data/caltrain_lat_long.db')
 GTFS_URL = f"https://api.511.org/transit/VehicleMonitoring?api_key={API_KEY}&agency=CT"  # Caltrain
@@ -63,4 +63,6 @@ def fetch_and_process_data():
         conn.close()
 
 if __name__ == "__main__":
-    fetch_and_process_data()
+    while True:
+        fetch_and_process_data()
+        time.sleep(60)
