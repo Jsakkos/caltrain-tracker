@@ -60,3 +60,48 @@ iframe {
     width: 80%;
     /* Optional: to control the width of the content */
 }
+
+/* Style for scroll indicator */
+.scroll-indicator {
+    text-align: center;
+    margin-top: 50px;
+}
+
+.scroll-indicator span {
+    display: block;
+    font-size: 1.2rem;
+    color: #007bff;
+    /* Adjust color */
+    margin-bottom: 10px;
+}
+
+/* Arrow styling */
+.scroll-indicator .arrow {
+    width: 24px;
+    height: 24px;
+    border-bottom: 3px solid #007bff;
+    border-right: 3px solid #007bff;
+    transform: rotate(45deg);
+    margin: 0 auto;
+    animation: bounce 2s infinite;
+}
+
+/* Bounce animation for the arrow */
+@keyframes bounce {
+
+    0%,
+    20%,
+    50%,
+    80%,
+    100% {
+        transform: translateY(0) rotate(45deg);
+    }
+
+    40% {
+        transform: translateY(10px) rotate(45deg);
+    }
+
+    60% {
+        transform: translateY(5px) rotate(45deg);
+    }
+}
