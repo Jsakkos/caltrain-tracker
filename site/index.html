@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Caltrain On-Time Performance</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+
+<body>
+    <header class="header">
+        <h1>Caltrain On-Time Performance</h1>
+        <p>Data visualization of on-time performance, delays, and more</p>
+    </header>
+
+    <div class="section" id="overall-performance">
+        <h2>Overall On-Time Performance</h2>
+        <div id="on-time-performance-percentage"></div>
+    </div>
+
+    <div class="section" id="daily-stats">
+        <h2>Daily On-Time Statistics</h2>
+        <iframe id="daily-stats-iframe" data-src="static/daily_stats.html"></iframe>
+    </div>
+
+    <div class="section" id="commute-delays">
+        <h2>Commute Delays</h2>
+        <iframe id="commute-delays-iframe" data-src="static/commute_delay.html"></iframe>
+    </div>
+
+    <div class="section" id="delay-minutes">
+        <h2>Delay Minutes</h2>
+        <iframe id="delay-minutes-iframe" data-src="static/delay_minutes.html"></iframe>
+    </div>
+
+    <div class="section" id="methodology">
+        <h2>Methodology</h2>
+
+        <h3>1. Data Collection</h3>
+        <p>
+            The system fetches real-time train location data from the GTFS-RT (General Transit Feed Specification -
+            Real-time)
+            API using the API key for the Caltrain operator. The data collected includes each train’s ID, its latitude
+            and longitude,
+            stop ID, and the timestamp of when the location was recorded. Collected data from <span
+                id="start_date"></span> to <span id="stop_date"></span> with <span id="n_datapoints"></span> data
+            points.
+        </p>
+
+        <h3>2. Storing Data</h3>
+        <p>
+            The data is stored in an SQLite database (<code>caltrain_lat_long.db</code>). A table called
+            <code>train_locations</code>
+            is used to store the information if it doesn't already exist. Each record is uniquely identified by the
+            combination of
+            timestamp, trip ID, and stop ID to prevent duplicate entries.
+        </p>
+
+        <h3>3. Data Processing</h3>
+        <p>
+            The stored data is processed by joining it with additional static data from the GTFS (schedules and stops).
+            The system
+            calculates the distance between a train's current position and the scheduled stop using the Haversine
+            formula to detect
+            when a train has arrived at a stop.
+        </p>
+
+        <h3>4. On-Time Performance Analysis</h3>
+        <p>
+            The on-time performance is calculated by comparing the actual arrival time (when the train is closest to the
+            stop)
+            with the scheduled arrival time. The delay for each trip is computed in minutes, and a trip is flagged as
+            "delayed"
+            if it arrives more than 4 minutes late.
+        </p>
+
+        <h3>5. Performance Metrics</h3>
+        <ul>
+            <li><b>Overall on-time performance:</b> The percentage of trains arriving on time is calculated.</li>
+            <li><b>Best/worst performing trains and stops:</b> Trains and stops with the shortest and longest average
+                delays are identified.</li>
+            <li><b>Delay severity:</b> Trips are classified as "Minor" (4-15 minutes late) or "Major" (more than 15
+                minutes late).</li>
+            <li><b>Commute periods:</b> Delays are analyzed separately for morning (6-9 AM) and evening (3:30-7:30 PM)
+                commute times.</li>
+        </ul>
+
+        <h3>6. Visualizations</h3>
+        <p>
+            Plotly is used to generate graphs for various metrics such as daily on-time performance, delay severity,
+            and delays during morning/evening commute times. These graphs are saved as HTML files and displayed in a
+            website using iframes.
+        </p>
+        <script src="scripts.js"></script>
+</body>
+
+</html>

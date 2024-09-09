@@ -1,0 +1,62 @@
+/* Basic styling */
+body {
+    font-family: 'Arial', sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f4f4f4;
+}
+
+.header {
+    text-align: center;
+    background-color: #007bff;
+    color: white;
+    padding: 50px 0;
+}
+
+h1 {
+    font-size: 3rem;
+    margin: 0;
+}
+
+p {
+    font-size: 1.2rem;
+}
+
+/* Section styling */
+.section {
+    padding: 80px 20px;
+    min-height: 100vh;
+    text-align: center;
+    opacity: 0;
+    transform: translateY(100px);
+    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
+
+.section.active {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Styling for the on-time percentage */
+#on-time-performance-percentage {
+    font-size: 8rem;
+    font-weight: bold;
+    color: #007bff;
+    margin-top: 20px;
+}
+
+iframe {
+    width: 90%;
+    height: 800px;
+    border: none;
+    margin-top: 20px;
+}
+
+/* Methodology Section - Left Justify */
+#methodology {
+    text-align: left;
+    margin-left: auto;
+    margin-right: auto;
+    width: 80%;
+    /* Optional: to control the width of the content */
+}
