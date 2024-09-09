@@ -1,8 +1,8 @@
 # Use an official Python runtime as the base image
 FROM python:3.11-slim
 
-# Install tzdata package
-RUN apt-get update && apt-get install -y tzdata
+# Install cron and tzdata for timezone handling
+RUN apt-get update && apt-get install -y cron tzdata
 
 # Set the timezone
 ENV TZ=America/Los_Angeles
@@ -18,10 +18,10 @@ COPY . /app
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Create directories for data and GTFS files
-RUN mkdir -p /data/gtfs_data
+RUN mkdir -p /data/gtfs_data /static
 
-# Make port 8050 available to the world outside this container
-EXPOSE 8050
+# Add the cron job to the crontab to run rebuild_plots.py at 1 AM daily
+RUN echo "0 1 * * * python /app/rebuild_plots.py" >> /etc/crontab
 
-# Run app.py when the container launches
-CMD ["python", "app.py"]
+# Add the cron service to start with the container
+CMD cron && python fetch_and_process_gtfsrt.py
