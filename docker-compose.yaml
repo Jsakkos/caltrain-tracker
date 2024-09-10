@@ -13,5 +13,5 @@ services:
     volumes:
       - ./data:/data
       - ./gtfs_data:/data/gtfs_data
-      - ./docs:/site
+      - ./docs:/docs
     restart: always

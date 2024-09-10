@@ -24,4 +24,4 @@ RUN mkdir -p /data/gtfs_data /static
 EXPOSE 8050
 
 # Start the data collection script and schedule daily plot regeneration
-CMD ["sh", "-c", "python fetch_and_process_gtfsrt.py & while true; do python rebuild_plots.py; sleep 3600; done"]
+CMD ["sh", "-c", "while true; do python fetch_and_process_gtfsrt.py; sleep 60; done & while true; do python rebuild_plots.py; sleep 3600; done"]

@@ -63,6 +63,4 @@ def fetch_and_process_data():
         conn.close()
 
 if __name__ == "__main__":
-    while True:
-        fetch_and_process_data()
-        time.sleep(60)
+    fetch_and_process_data()
