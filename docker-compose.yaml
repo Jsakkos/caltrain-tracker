@@ -9,7 +9,6 @@ services:
       - API_KEY=${API_KEY}
       - TZ=America/Los_Angeles
     volumes:
-      - ./data:/data
-      - ./gtfs_data:/data/gtfs_data
-      - ./docs:/docs
+      - ./data:/app/data
+      - ./docs:/app/docs
     restart: always
