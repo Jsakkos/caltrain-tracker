@@ -18,7 +18,7 @@ COPY . /app
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Create directories for data and GTFS files
-RUN mkdir -p /data/gtfs_data /static
+# RUN mkdir -p /data/gtfs_data /static
 
 # Make port 8050 available to the world outside this container (if needed for testing)
 EXPOSE 8050
