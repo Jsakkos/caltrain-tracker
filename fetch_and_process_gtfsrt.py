@@ -9,7 +9,7 @@ import time
 API_KEY = os.environ.get('API_KEY')
 
 # Path to the SQLite database where train location data will be stored
-DB_PATH = '/data/caltrain_lat_long.db'
+DB_PATH = 'data/caltrain_lat_long.db'
 
 # URL to fetch real-time vehicle monitoring data from the GTFS-RT API
 GTFS_URL = f"https://api.511.org/transit/VehicleMonitoring?api_key={API_KEY}&agency=CT"  # Caltrain
