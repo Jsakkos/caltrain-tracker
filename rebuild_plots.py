@@ -187,7 +187,7 @@ def generate_daily_stats_plot(daily_summary_melted):
     height=600,              # Set a default height
     margin=dict(l=20, r=20, t=50, b=20),
     title_font_size=24)
-    fig.write_html("/app/docs/static/daily_stats.html",include_plotlyjs='cdn')
+    fig.write_html("./docs/static/daily_stats.html",include_plotlyjs='cdn')
 def generate_commute_delay_plot(commute_delay_counts):
     fig_commute_delay = px.bar(commute_delay_counts, x='commute_period', y='percentage', color='delay_severity',
                         title="Percentage of Morning and Evening Commutes with Delays by Severity",
@@ -200,7 +200,7 @@ def generate_commute_delay_plot(commute_delay_counts):
     height=600,              # Set a default height
     margin=dict(l=20, r=20, t=50, b=20),
     title_font_size=24)
-    fig_commute_delay.write_html("/app/docs/static/commute_delay.html",include_plotlyjs='cdn')
+    fig_commute_delay.write_html("./docs/static/commute_delay.html",include_plotlyjs='cdn')
 def generate_delay_minutes_plot(unique_trips):
     fig_delay_minutes = px.histogram(unique_trips.loc[unique_trips.delay_minutes >=1],x='delay_minutes', color="commute_period",barmode='overlay',marginal="box",log_x=True,
                         hover_data=unique_trips.columns,
@@ -210,7 +210,7 @@ def generate_delay_minutes_plot(unique_trips):
     height=600,              # Set a default height
     margin=dict(l=20, r=20, t=50, b=20),
     title_font_size=24)
-    fig_delay_minutes.write_html("/app/docs/static/delay_minutes.html",include_plotlyjs='cdn')
+    fig_delay_minutes.write_html("./docs/static/delay_minutes.html",include_plotlyjs='cdn')
 def save_graphs(df):
     # Generate and save the graphs
     on_time_percentage,daily_summary_melted,commute_delay_counts,unique_trips,start_date,stop_date,n_datapoints = process_data(df)
@@ -224,13 +224,13 @@ def main():
     df = load_data()
     on_time_percentage,start_date,stop_date,n_datapoints = save_graphs(df)
     
-    with open("/app/docs/static/on_time_percentage.txt", "w") as f:
+    with open("./docs/static/on_time_percentage.txt", "w") as f:
         f.write(f"{on_time_percentage:.2f}%")
-    with open("/app/docs/static/stop_date.txt", "w") as f:
+    with open("./docs/static/stop_date.txt", "w") as f:
         f.write(f"{stop_date}")
-    with open("/app/docs/static/start_date.txt", "w") as f:
+    with open("./docs/static/start_date.txt", "w") as f:
         f.write(f"{start_date}")
-    with open("/app/docs/static/n_datapoints.txt", "w") as f:
+    with open("./docs/static/n_datapoints.txt", "w") as f:
         f.write(f"{n_datapoints}")    
 if __name__ == "__main__":
     main()
