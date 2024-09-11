@@ -11,7 +11,7 @@ import math
 from datetime import datetime, timedelta,time
 import json
 import os
-DB_PATH = r'data/caltrain_lat_long.db'
+DB_PATH = r'/data/caltrain_lat_long.db'
 # Define custom colors for each Status
 STATUS_COLORS = {
     'On Time': '#00CC96',
