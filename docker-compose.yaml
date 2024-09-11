@@ -7,8 +7,6 @@ services:
       - "8050:8050"
     environment:
       - API_KEY=${API_KEY}
-      - DB_PATH=/data/caltrain_lat_long.db
-      - GTFS_PATH=/data/gtfs_data
       - TZ=America/Los_Angeles
     volumes:
       - ./data:/data
