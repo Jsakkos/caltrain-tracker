@@ -1,7 +1,6 @@
 route_id,category,subcategory,running_way
-B7,1,101,1
-L1,1,101,1
-L2,1,101,1
-L3,1,101,1
-L4,1,101,1
-L5,1,101,1
+Local Weekday,1,101,1
+Local Weekend,1,101,1
+Limited,1,101,1
+Express,1,101,1
+South County,1,101,1
