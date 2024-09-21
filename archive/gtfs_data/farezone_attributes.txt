@@ -1,0 +1,7 @@
+zone_id,zone_name
+74634,Zone 1-SF to San Bruno
+74635,Zone 2-Millbrae to Redwood City
+74633,Zone 3-Atherton to Sunnyvale
+74636,Zone 4-Lawrence to Tamien
+74637,Zone 5-Capitol & Blossom Hill
+74638,Zone 6-Morgan Hill to Gilroy

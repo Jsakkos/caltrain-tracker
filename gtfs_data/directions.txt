@@ -1,13 +1,11 @@
 route_id,direction_id,direction
-L3,0,North
-L3,1,South
-L4,1,South
-L4,0,North
-L5,0,North
-L5,1,South
-L2,0,North
-L2,1,South
-L1,0,North
-L1,1,South
-B7,0,North
-B7,1,South
+Local Weekend,0,North
+Local Weekend,1,South
+Local Weekday,0,North
+Local Weekday,1,South
+Limited,0,North
+Limited,1,South
+Express,1,South
+Express,0,North
+South County,0,North
+South County,1,South
