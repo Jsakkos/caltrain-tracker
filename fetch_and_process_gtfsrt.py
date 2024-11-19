@@ -4,6 +4,7 @@ import os
 import json
 from datetime import datetime, timedelta
 import time
+import pytz
 
 # Get the API key from environment variables
 API_KEY = os.environ.get('API_KEY')
@@ -126,7 +127,9 @@ def fetch_and_process_data():
             monitored_call = journey['MonitoredCall']
             stop_id = monitored_call['StopPointRef']
             timestamp = activity['RecordedAtTime']
-            timestamp = datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%S%z') - timedelta(hours=7)
+            timestamp = datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%S%z')
+            local_tz = pytz.timezone('America/Los_Angeles')
+            timestamp = timestamp.astimezone(local_tz)
             timestamp = timestamp.replace(tzinfo=None)
             
             # Prepare the data for insertion into the database

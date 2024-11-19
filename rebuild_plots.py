@@ -11,6 +11,7 @@ import math
 from datetime import datetime, timedelta,time
 import json
 import os
+import pytz
 DB_PATH = r'data/caltrain_lat_long.db'
 # Define custom colors for each Status
 STATUS_COLORS = {
@@ -58,17 +59,23 @@ def has_train_arrived(train_lat, train_lon, stop_lat, stop_lon, threshold=100):
 
 # Normalize the arrival times
 def normalize_time(t):
-    if int(t.split(":")[0]) >= 24:
-        return "00" + t[2:]
-    return t
+    try:
+        hour = int(t.split(":")[0])
+        if hour >= 24:
+            new_hour = hour % 24
+            return f"{new_hour:02d}{t[2:]}"
+        return t
+    except ValueError:
+        return t
 
 
 # Function to calculate time difference in minutes
 def calculate_time_difference(time1, time2):
-    datetime1 = datetime.combine(datetime.today(), time1)
-    datetime2 = datetime.combine(datetime.today(), time2)
-    time_diff = datetime2 - datetime1
-    return time_diff.total_seconds() / 60  # Return the difference in minutes
+    tz = pytz.timezone('America/Los_Angeles')
+    today = datetime.now(tz).date()
+    datetime1 = tz.localize(datetime.combine(today, time1))
+    datetime2 = tz.localize(datetime.combine(today, time2))
+    return (datetime2 - datetime1).total_seconds() / 60
 
 
 # Categorize commute time
