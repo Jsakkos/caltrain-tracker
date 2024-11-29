@@ -130,10 +130,9 @@ def fetch_and_process_data():
             timestamp = datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%S%z')
             local_tz = pytz.timezone('America/Los_Angeles')
             timestamp = timestamp.astimezone(local_tz)
-            timestamp = timestamp.replace(tzinfo=None)
-            
-            # Prepare the data for insertion into the database
-            lat_lon_data = (trip_id, stop_id, vehicle_lat, vehicle_lon, timestamp.isoformat())
+            # Store with timezone information
+            lat_lon_data = (trip_id, stop_id, vehicle_lat, vehicle_lon, 
+                            timestamp.isoformat(timespec='seconds'))
             insert_arrival(conn, lat_lon_data)
     
     except requests.RequestException as e:
