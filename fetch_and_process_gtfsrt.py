@@ -133,9 +133,6 @@ def fetch_and_process_data():
             # Store as naive timestamp in local time
             local_naive = local_dt.replace(tzinfo=None)
             lat_lon_data = (trip_id, stop_id, vehicle_lat, vehicle_lon, local_naive.isoformat())
-            print(f"UTC timestamp: {utc_dt}")
-            print(f"Local timestamp: {local_dt}")
-            print(f"Local naive: {local_naive}")
             insert_arrival(conn, lat_lon_data)
     
     except requests.RequestException as e:
