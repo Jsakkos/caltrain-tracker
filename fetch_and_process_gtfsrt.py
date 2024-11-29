@@ -127,12 +127,12 @@ def fetch_and_process_data():
             monitored_call = journey['MonitoredCall']
             stop_id = monitored_call['StopPointRef']
             timestamp = activity['RecordedAtTime']
-            timestamp = datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%S%z')
+            utc_dt = datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%S%z')
             local_tz = pytz.timezone('America/Los_Angeles')
-            timestamp = timestamp.astimezone(local_tz)
-            # Store with timezone information
-            lat_lon_data = (trip_id, stop_id, vehicle_lat, vehicle_lon, 
-                            timestamp.isoformat(timespec='seconds'))
+            local_dt = utc_dt.astimezone(local_tz)
+            # Store as naive timestamp in local time
+            local_naive = local_dt.replace(tzinfo=None)
+            lat_lon_data = (trip_id, stop_id, vehicle_lat, vehicle_lon, local_naive.isoformat())
             insert_arrival(conn, lat_lon_data)
     
     except requests.RequestException as e:
