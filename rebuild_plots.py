@@ -31,7 +31,8 @@ def load_data():
     df = pd.read_sql_query("SELECT * FROM train_locations", conn)
     conn.close()
     
-    df['timestamp'] = pd.to_datetime(df['timestamp'])
+    local_tz = pytz.timezone('America/Los_Angeles')
+    df['timestamp'] = pd.to_datetime(df['timestamp']).dt.tz_localize(local_tz)
     return df
 
 def load_stops_data():
@@ -71,12 +72,22 @@ def normalize_time(t):
 
 # Function to calculate time difference in minutes
 def calculate_time_difference(time1, time2):
-    tz = pytz.timezone('America/Los_Angeles')
-    today = datetime.now(tz).date()
-    datetime1 = tz.localize(datetime.combine(today, time1))
-    datetime2 = tz.localize(datetime.combine(today, time2))
+    local_tz = pytz.timezone('America/Los_Angeles')
+    today = datetime.now(local_tz).date()
+    
+    # Convert scheduled time to timezone-aware
+    time1_dt = datetime.combine(today, time1)
+    datetime1 = local_tz.localize(time1_dt)
+    
+    # Convert actual time to timezone-aware
+    time2_dt = datetime.combine(today, time2)
+    datetime2 = local_tz.localize(time2_dt)
+    
+    # Handle cases where time2 is after midnight
+    if datetime2 < datetime1:
+        datetime2 += timedelta(days=1)
+    
     return (datetime2 - datetime1).total_seconds() / 60
-
 
 # Categorize commute time
 def categorize_commute_time(timestamp):
