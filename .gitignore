@@ -159,3 +159,5 @@ cython_debug/
 # Databases
 *.db
 *.sql
+data/*.db
+data/caltrain_lat_long.db
