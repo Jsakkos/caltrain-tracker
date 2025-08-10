@@ -1,19 +1,84 @@
 # Caltrain On-Time Performance Tracker
-## Overall Caltrain On-Time Performance
-82.99% of trains arriving on time
-## Using caltrain-tracker to collect your own data
-- Fork this repository
-- Get a 511.org API key at https://511.org/open-data/token
-- On Linux, cd into caltrain-tracker
-- Build the Docker image `docker compose build`
-- Create a .env file with your API key `API_KEY="your-api-key"`
-- Run the Docker image `docker compose up -d`
-- Open a web browser to port 8050 to view the dashboard `your-machine-ip-address:8050`
-### Folder structure
-#### data
-Contains an SQLite database with the accumulated GTFS-RT data (about 1 month, 1 min resolution).
-#### gtfs
-Contains the unzipped GTFS feed data, which is the reference used for the train schedules. Can be updated by downloading again from 511.org (https://511.org/open-data/transit).
+
+## Overview
+
+A modernized application for tracking and analyzing Caltrain performance metrics. This project collects real-time train location data from the 511.org GTFS-RT API, processes it to determine arrival times and delays, and provides a web interface for visualizing the data.
+
+## Key Features
+
+- Real-time tracking of Caltrain locations and arrivals
+- Historical analysis of on-time performance
+- Visualization of delay patterns by time of day, day of week, and stop location
+- REST API for programmatic access to Caltrain performance data
+- Automated data collection and processing using Prefect workflows
+
+## Architecture
+
+The application is built using the following technologies:
+
+- **FastAPI**: Modern, high-performance web framework for building APIs
+- **Prefect**: Workflow orchestration for managing data collection and processing tasks
+- **PostgreSQL**: Robust database for storing train location and performance data
+- **SQLAlchemy**: ORM for database interactions
+- **Alembic**: Database migration tool
+- **Plotly**: Interactive data visualizations
+- **Docker**: Containerization for easy deployment
+
+## Getting Started
+
+### Option 1: Using Docker Compose (Recommended)
+
+1. Fork or clone this repository
+2. Get a 511.org API key at https://511.org/open-data/token
+3. Create a `.env` file in the root directory with your API key:
+   ```
+   API_KEY="your-api-key"
+   ```
+4. Build and run the Docker containers:
+   ```
+   docker compose build
+   docker compose up -d
+   ```
+5. Access the application:
+   - Web UI: `http://localhost:8181`
+   - API documentation: `http://localhost:8181/docs`
+   - Prefect dashboard: `http://localhost:4200`
+
+### Option 2: Local Development Setup
+
+1. Clone the repository
+2. Run the setup script to prepare your development environment:
+   ```
+   ./setup_dev.sh
+   ```
+3. Edit the `.env` file with your configuration
+4. Create the PostgreSQL database (or use Docker for the database only)
+5. Run the application:
+   ```
+   python main.py
+   ```
+
+## Project Structure
+
+```
+├── src/                     # Application source code
+│   ├── api/                 # FastAPI models and endpoints
+│   ├── data/                # Data processing utilities
+│   ├── db/                  # Database connection and session handling
+│   ├── models/              # SQLAlchemy data models
+│   ├── pipelines/           # Prefect workflows for data collection and processing
+│   ├── utils/               # Utility functions (time, geo, etc.)
+│   └── config.py            # Application configuration
+├── alembic/                 # Database migrations
+├── static/                  # Static content (plots, data files)
+│   ├── plots/               # Generated visualizations
+│   └── data/                # Generated data files
+├── gtfs_data/               # GTFS static feed data
+├── docker-compose.yaml      # Docker Compose configuration
+├── Dockerfile               # Docker image definition
+├── main.py                  # Application entry point
+└── requirements.txt         # Python dependencies
+```
 
 # Methodology
 

@@ -1,0 +1,115 @@
+01:11:19.062 | INFO    | prefect - Starting temporary server on http://127.0.0.1:8221
+See https://docs.prefect.io/3.0/manage/self-host#self-host-a-prefect-server for more information on running a dedicated Prefect server.
+01:11:35.337 | INFO    | Flow run 'dangerous-millipede' - Beginning flow run 'dangerous-millipede' for flow 'Process Train Data and Generate Visualizations'
+01:11:35.520 | INFO    | Task run 'load_raw_data-cd5' - Finished in state Completed()
+01:11:35.617 | INFO    | Task run 'load_gtfs_data-bb4' - Finished in state Completed()
+01:11:35.699 | WARNING | src.flows.data_processing - One or more input DataFrames are empty. Cannot process arrival data.
+01:11:35.703 | INFO    | Task run 'process_arrival_data-316' - Finished in state Completed()
+01:11:35.780 | INFO    | Task run 'save_processed_data-ac8' - Finished in state Completed()
+01:11:35.857 | ERROR   | Task run 'generate_daily_stats_plot-fff' - Task run failed with exception: KeyError('date') - Retries are exhausted
+Traceback (most recent call last):
+  File "/home/jsakkos/.local/lib/python3.10/site-packages/prefect/task_engine.py", line 806, in run_context
+    yield self
+  File "/home/jsakkos/.local/lib/python3.10/site-packages/prefect/task_engine.py", line 1388, in run_task_sync
+    engine.call_task_fn(txn)
+  File "/home/jsakkos/.local/lib/python3.10/site-packages/prefect/task_engine.py", line 829, in call_task_fn
+    result = call_with_parameters(self.task.fn, parameters)
+  File "/home/jsakkos/.local/lib/python3.10/site-packages/prefect/utilities/callables.py", line 208, in call_with_parameters
+    return fn(*args, **kwargs)
+  File "/home/jsakkos/caltrain-prefect/src/flows/data_processing.py", line 263, in generate_daily_stats_plot
+    daily_summary = processed_df.groupby('date')['delay_severity'].value_counts(normalize=True).unstack() * 100
+  File "/home/jsakkos/.local/lib/python3.10/site-packages/pandas/core/frame.py", line 9183, in groupby
+    return DataFrameGroupBy(
+  File "/home/jsakkos/.local/lib/python3.10/site-packages/pandas/core/groupby/groupby.py", line 1329, in __init__
+    grouper, exclusions, obj = get_grouper(
+  File "/home/jsakkos/.local/lib/python3.10/site-packages/pandas/core/groupby/grouper.py", line 1043, in get_grouper
+    raise KeyError(gpr)
+KeyError: 'date'
+01:11:35.915 | ERROR   | Task run 'generate_daily_stats_plot-fff' - Finished in state Failed("Task run encountered an exception KeyError: 'date'")
+01:11:35.916 | ERROR   | Flow run 'dangerous-millipede' - Encountered exception during execution: KeyError('date')
+Traceback (most recent call last):
+  File "/home/jsakkos/.local/lib/python3.10/site-packages/prefect/flow_engine.py", line 767, in run_context
+    yield self
+  File "/home/jsakkos/.local/lib/python3.10/site-packages/prefect/flow_engine.py", line 1379, in run_flow_sync
+    engine.call_flow_fn()
+  File "/home/jsakkos/.local/lib/python3.10/site-packages/prefect/flow_engine.py", line 787, in call_flow_fn
+    result = call_with_parameters(self.flow.fn, self.parameters)
+  File "/home/jsakkos/.local/lib/python3.10/site-packages/prefect/utilities/callables.py", line 208, in call_with_parameters
+    return fn(*args, **kwargs)
+  File "/home/jsakkos/caltrain-prefect/src/flows/data_processing.py", line 487, in process_data_flow
+    daily_stats_plot = generate_daily_stats_plot(processed_df)
+  File "/home/jsakkos/.local/lib/python3.10/site-packages/prefect/tasks.py", line 1037, in __call__
+    return run_task(
+  File "/home/jsakkos/.local/lib/python3.10/site-packages/prefect/task_engine.py", line 1603, in run_task
+    return run_task_sync(**kwargs)
+  File "/home/jsakkos/.local/lib/python3.10/site-packages/prefect/task_engine.py", line 1390, in run_task_sync
+    return engine.state if return_type == "state" else engine.result()
+  File "/home/jsakkos/.local/lib/python3.10/site-packages/prefect/task_engine.py", line 483, in result
+    raise self._raised
+  File "/home/jsakkos/.local/lib/python3.10/site-packages/prefect/task_engine.py", line 806, in run_context
+    yield self
+  File "/home/jsakkos/.local/lib/python3.10/site-packages/prefect/task_engine.py", line 1388, in run_task_sync
+    engine.call_task_fn(txn)
+  File "/home/jsakkos/.local/lib/python3.10/site-packages/prefect/task_engine.py", line 829, in call_task_fn
+    result = call_with_parameters(self.task.fn, parameters)
+  File "/home/jsakkos/.local/lib/python3.10/site-packages/prefect/utilities/callables.py", line 208, in call_with_parameters
+    return fn(*args, **kwargs)
+  File "/home/jsakkos/caltrain-prefect/src/flows/data_processing.py", line 263, in generate_daily_stats_plot
+    daily_summary = processed_df.groupby('date')['delay_severity'].value_counts(normalize=True).unstack() * 100
+  File "/home/jsakkos/.local/lib/python3.10/site-packages/pandas/core/frame.py", line 9183, in groupby
+    return DataFrameGroupBy(
+  File "/home/jsakkos/.local/lib/python3.10/site-packages/pandas/core/groupby/groupby.py", line 1329, in __init__
+    grouper, exclusions, obj = get_grouper(
+  File "/home/jsakkos/.local/lib/python3.10/site-packages/pandas/core/groupby/grouper.py", line 1043, in get_grouper
+    raise KeyError(gpr)
+KeyError: 'date'
+01:11:35.975 | INFO    | Flow run 'dangerous-millipede' - Finished in state Failed("Flow run encountered an exception: KeyError: 'date'")
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "/home/jsakkos/.local/lib/python3.10/site-packages/prefect/flows.py", line 1647, in __call__
+    return run_flow(
+  File "/home/jsakkos/.local/lib/python3.10/site-packages/prefect/flow_engine.py", line 1536, in run_flow
+    ret_val = run_flow_sync(**kwargs)
+  File "/home/jsakkos/.local/lib/python3.10/site-packages/prefect/flow_engine.py", line 1381, in run_flow_sync
+    return engine.state if return_type == "state" else engine.result()
+  File "/home/jsakkos/.local/lib/python3.10/site-packages/prefect/flow_engine.py", line 350, in result
+    raise self._raised
+  File "/home/jsakkos/.local/lib/python3.10/site-packages/prefect/flow_engine.py", line 767, in run_context
+    yield self
+  File "/home/jsakkos/.local/lib/python3.10/site-packages/prefect/flow_engine.py", line 1379, in run_flow_sync
+    engine.call_flow_fn()
+  File "/home/jsakkos/.local/lib/python3.10/site-packages/prefect/flow_engine.py", line 787, in call_flow_fn
+    result = call_with_parameters(self.flow.fn, self.parameters)
+  File "/home/jsakkos/.local/lib/python3.10/site-packages/prefect/utilities/callables.py", line 208, in call_with_parameters
+    return fn(*args, **kwargs)
+  File "/home/jsakkos/caltrain-prefect/src/flows/data_processing.py", line 487, in process_data_flow
+    daily_stats_plot = generate_daily_stats_plot(processed_df)
+  File "/home/jsakkos/.local/lib/python3.10/site-packages/prefect/tasks.py", line 1037, in __call__
+    return run_task(
+  File "/home/jsakkos/.local/lib/python3.10/site-packages/prefect/task_engine.py", line 1603, in run_task
+    return run_task_sync(**kwargs)
+  File "/home/jsakkos/.local/lib/python3.10/site-packages/prefect/task_engine.py", line 1390, in run_task_sync
+    return engine.state if return_type == "state" else engine.result()
+  File "/home/jsakkos/.local/lib/python3.10/site-packages/prefect/task_engine.py", line 483, in result
+    raise self._raised
+  File "/home/jsakkos/.local/lib/python3.10/site-packages/prefect/task_engine.py", line 806, in run_context
+    yield self
+  File "/home/jsakkos/.local/lib/python3.10/site-packages/prefect/task_engine.py", line 1388, in run_task_sync
+    engine.call_task_fn(txn)
+  File "/home/jsakkos/.local/lib/python3.10/site-packages/prefect/task_engine.py", line 829, in call_task_fn
+    result = call_with_parameters(self.task.fn, parameters)
+  File "/home/jsakkos/.local/lib/python3.10/site-packages/prefect/utilities/callables.py", line 208, in call_with_parameters
+    return fn(*args, **kwargs)
+  File "/home/jsakkos/caltrain-prefect/src/flows/data_processing.py", line 263, in generate_daily_stats_plot
+    daily_summary = processed_df.groupby('date')['delay_severity'].value_counts(normalize=True).unstack() * 100
+  File "/home/jsakkos/.local/lib/python3.10/site-packages/pandas/core/frame.py", line 9183, in groupby
+    return DataFrameGroupBy(
+  File "/home/jsakkos/.local/lib/python3.10/site-packages/pandas/core/groupby/groupby.py", line 1329, in __init__
+    grouper, exclusions, obj = get_grouper(
+  File "/home/jsakkos/.local/lib/python3.10/site-packages/pandas/core/groupby/grouper.py", line 1043, in get_grouper
+    raise KeyError(gpr)
+KeyError: 'date'
+01:11:36.020 | INFO    | prefect - Stopping temporary server on http://127.0.0.1:8221
+Base directory: /home/jsakkos/caltrain-prefect
+Dotenv path: /home/jsakkos/caltrain-prefect/.env
+Dotenv file exists: True

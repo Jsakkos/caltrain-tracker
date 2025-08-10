@@ -1,0 +1,19 @@
+# Data processing and visualization
+plotly>=2.27.0
+pandas>=2.0.0
+numpy>=1.24.0
+
+# Database
+SQLAlchemy>=2.0.0
+psycopg2-binary>=2.9.5
+alembic>=1.12.0
+
+# Workflow Orchestration
+prefect>=3.0.0
+
+# Utilities
+requests>=2.31.0
+pytz>=2023.3
+python-dotenv>=1.0.0
+rich>=13.6.0
+typer

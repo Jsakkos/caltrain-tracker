@@ -1,5 +1,25 @@
-plotly
-pandas
-SQLAlchemy
-requests
-pytz
+# Data processing and visualization
+plotly>=2.27.0
+pandas>=2.0.0
+numpy>=1.24.0
+
+# Database
+SQLAlchemy>=2.0.0
+psycopg2-binary>=2.9.5
+alembic>=1.12.0
+
+# API & Web
+fastapi>=0.104.0
+uvicorn>=0.23.0
+pydantic>=2.4.0
+dash>=2.13.0
+dash-bootstrap-components>=1.5.0
+
+# Workflow Orchestration
+prefect>=3.0.0
+
+# Utilities
+requests>=2.31.0
+pytz>=2023.3
+python-dotenv>=1.0.0
+rich>=13.6.0
