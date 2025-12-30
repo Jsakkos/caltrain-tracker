@@ -45,6 +45,7 @@ TIMEZONE = 'America/Los_Angeles'
 
 # Paths
 GTFS_DATA_PATH = os.environ.get('GTFS_PATH', str(BASE_DIR / 'gtfs_data'))
+GTFS_ARCHIVE_PATH = str(BASE_DIR / 'archive')
 STATIC_CONTENT_PATH = str(BASE_DIR / 'static')
 
 # Prefect settings

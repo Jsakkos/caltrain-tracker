@@ -1,0 +1,10 @@
+- Caltrain dashboard ideas
+	- Average wait time at each station
+	- Detect train cancellation
+	- Ensure safety between time changes
+	- [x] Get schedule regularly to ensure correctness
+	- [x] On time percentage heat map for each day for each month of the year
+	- Upgrade from SQLite to PostgreSQL
+	- Make the dashboard mobile friendly
+	- Add more visualizations (e.g., bar charts, line graphs)
+	- Add stop-specific performance metrics

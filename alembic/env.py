@@ -19,6 +19,7 @@ if config.config_file_name is not None:
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
 from src.models.train_data import Base
+from src.models import gtfs_schedule  # Import GTFS schedule models for autogenerate
 target_metadata = Base.metadata
 
 # other values from the config, defined by the needs of env.py,
