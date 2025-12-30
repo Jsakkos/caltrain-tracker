@@ -21,10 +21,11 @@ from datetime import datetime
 from pathlib import Path
 
 # Configuration
+PROJECT_ROOT = Path(__file__).parent.parent  # Go up from /scripts to repo root
 WEBSITE_REPO_PATH = Path.home() / "website-deploy"
 OUTPUT_DIR = WEBSITE_REPO_PATH / "public" / "data" / "caltrain"
-SOURCE_PLOTS = Path("static/plots")
-SOURCE_DATA = Path("static/data")
+SOURCE_PLOTS = PROJECT_ROOT / "static" / "plots"
+SOURCE_DATA = PROJECT_ROOT / "static" / "data"
 
 
 def ensure_output_dirs():
@@ -73,27 +74,33 @@ def git_push():
     """Commit and push changes to website repo."""
     os.chdir(WEBSITE_REPO_PATH)
     
-    # Pull latest to avoid conflicts
-    print("Pulling latest changes...")
-    subprocess.run(["git", "pull", "--rebase"], check=True)
-    
-    # Add changes
+    # Add changes first (before pulling)
     subprocess.run(["git", "add", "public/data/caltrain"], check=True)
     
     # Check if there are changes to commit
     result = subprocess.run(["git", "diff", "--cached", "--quiet"])
     
-    if result.returncode != 0:  # There are changes
-        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M")
-        subprocess.run([
-            "git", "commit", "-m", f"chore: update Caltrain data - {timestamp}"
-        ], check=True)
-        subprocess.run(["git", "push"], check=True)
-        print(f"✓ Pushed to website repo at {timestamp}")
-        return True
-    else:
+    if result.returncode == 0:
         print("No changes to push")
         return False
+    
+    # Commit the changes
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M")
+    subprocess.run([
+        "git", "commit", "-m", f"chore: update Caltrain data - {timestamp}"
+    ], check=True)
+    
+    # Pull with rebase to integrate any remote changes
+    print("Pulling latest changes...")
+    pull_result = subprocess.run(["git", "pull", "--rebase"])
+    
+    if pull_result.returncode != 0:
+        print("⚠ Pull failed, attempting to push anyway...")
+    
+    # Push
+    subprocess.run(["git", "push"], check=True)
+    print(f"✓ Pushed to website repo at {timestamp}")
+    return True
 
 
 def main():
@@ -102,10 +109,9 @@ def main():
     print("Caltrain Data Export to Website")
     print("=" * 50)
     
-    # Ensure we're in the caltrain-tracker directory
-    script_dir = Path(__file__).parent.resolve()
-    os.chdir(script_dir)
-    print(f"Working from: {script_dir}")
+    print(f"Project root: {PROJECT_ROOT}")
+    print(f"Source plots: {SOURCE_PLOTS}")
+    print(f"Source data: {SOURCE_DATA}")
     
     # Check if website repo exists
     if not WEBSITE_REPO_PATH.exists():
