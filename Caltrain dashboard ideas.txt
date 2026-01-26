@@ -1,10 +1,13 @@
-- Caltrain dashboard ideas
+I want to improve the Caltrain dashboard with better visualizations and data processing for hosting on my Next.js website. I'd like to separate the visualizations into:
+1) a dashboard, with the highlights of the data (placeholder is here https://www.jonathanksakkos.com/projects/caltrain-tracker/dashboard/)
+2) a scrollable infographic-style data section, with the raw data and visualizations (expanding on what is already there)
+
+Some preliminary project ideas:
+	- Improve speed of data processing 
 	- Average wait time at each station
 	- Detect train cancellation
 	- Ensure safety between time changes
-	- [x] Get schedule regularly to ensure correctness
-	- [x] On time percentage heat map for each day for each month of the year
-	- Upgrade from SQLite to PostgreSQL
-	- Make the dashboard mobile friendly
+	- [x] Get schedule regularly to ensure correctness (should be done in check_gtfs_updates, but needs to be integrated into the main workflow or secondary)
+	- [x] On time percentage heat map for each day for each month of the year (prototyped in on_time_heatmap.ipynb)
 	- Add more visualizations (e.g., bar charts, line graphs)
-	- Add stop-specific performance metrics
+	- Add stop-specific performance metrics. I envision this as part of the scrollable infographic-style data section, with each stop shown separately on a vertical continuum. I want to generate unique images for each stop. Please put together a list of the stops and some prompt suggestions for nano banana.

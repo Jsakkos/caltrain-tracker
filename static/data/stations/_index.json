@@ -1,0 +1,239 @@
+{
+  "generated_at": "2025-12-30T18:12:51.403121",
+  "days_analyzed": 30,
+  "station_count": 29,
+  "stations": [
+    {
+      "id": "san_francisco",
+      "name": "San Francisco",
+      "order": 1,
+      "on_time_pct": 100.0,
+      "total_arrivals": 1179,
+      "rating": "excellent"
+    },
+    {
+      "id": "22nd_street",
+      "name": "22nd Street",
+      "order": 2,
+      "on_time_pct": 90.4,
+      "total_arrivals": 2467,
+      "rating": "excellent"
+    },
+    {
+      "id": "bayshore",
+      "name": "Bayshore",
+      "order": 3,
+      "on_time_pct": 90.1,
+      "total_arrivals": 1945,
+      "rating": "excellent"
+    },
+    {
+      "id": "south_sf",
+      "name": "South San Francisco",
+      "order": 4,
+      "on_time_pct": 91.4,
+      "total_arrivals": 2468,
+      "rating": "excellent"
+    },
+    {
+      "id": "san_bruno",
+      "name": "San Bruno",
+      "order": 5,
+      "on_time_pct": 92.5,
+      "total_arrivals": 1945,
+      "rating": "excellent"
+    },
+    {
+      "id": "millbrae",
+      "name": "Millbrae",
+      "order": 6,
+      "on_time_pct": 92.8,
+      "total_arrivals": 2458,
+      "rating": "excellent"
+    },
+    {
+      "id": "broadway",
+      "name": "Broadway",
+      "order": 7,
+      "on_time_pct": 91.2,
+      "total_arrivals": 559,
+      "rating": "excellent"
+    },
+    {
+      "id": "burlingame",
+      "name": "Burlingame",
+      "order": 8,
+      "on_time_pct": 92.8,
+      "total_arrivals": 1945,
+      "rating": "excellent"
+    },
+    {
+      "id": "san_mateo",
+      "name": "San Mateo",
+      "order": 9,
+      "on_time_pct": 92.7,
+      "total_arrivals": 2458,
+      "rating": "excellent"
+    },
+    {
+      "id": "hayward_park",
+      "name": "Hayward Park",
+      "order": 10,
+      "on_time_pct": 93.3,
+      "total_arrivals": 1946,
+      "rating": "excellent"
+    },
+    {
+      "id": "hillsdale",
+      "name": "Hillsdale",
+      "order": 11,
+      "on_time_pct": 92.6,
+      "total_arrivals": 2456,
+      "rating": "excellent"
+    },
+    {
+      "id": "belmont",
+      "name": "Belmont",
+      "order": 12,
+      "on_time_pct": 94.2,
+      "total_arrivals": 1904,
+      "rating": "excellent"
+    },
+    {
+      "id": "san_carlos",
+      "name": "San Carlos",
+      "order": 13,
+      "on_time_pct": 91.7,
+      "total_arrivals": 1915,
+      "rating": "excellent"
+    },
+    {
+      "id": "redwood_city",
+      "name": "Redwood City",
+      "order": 14,
+      "on_time_pct": 93.6,
+      "total_arrivals": 2430,
+      "rating": "excellent"
+    },
+    {
+      "id": "menlo_park",
+      "name": "Menlo Park",
+      "order": 16,
+      "on_time_pct": 93.1,
+      "total_arrivals": 2206,
+      "rating": "excellent"
+    },
+    {
+      "id": "palo_alto",
+      "name": "Palo Alto",
+      "order": 17,
+      "on_time_pct": 92.0,
+      "total_arrivals": 2466,
+      "rating": "excellent"
+    },
+    {
+      "id": "california_ave",
+      "name": "California Avenue",
+      "order": 18,
+      "on_time_pct": 91.1,
+      "total_arrivals": 2212,
+      "rating": "excellent"
+    },
+    {
+      "id": "san_antonio",
+      "name": "San Antonio",
+      "order": 19,
+      "on_time_pct": 92.8,
+      "total_arrivals": 2207,
+      "rating": "excellent"
+    },
+    {
+      "id": "mountain_view",
+      "name": "Mountain View",
+      "order": 20,
+      "on_time_pct": 91.0,
+      "total_arrivals": 2464,
+      "rating": "excellent"
+    },
+    {
+      "id": "sunnyvale",
+      "name": "Sunnyvale",
+      "order": 21,
+      "on_time_pct": 91.8,
+      "total_arrivals": 2453,
+      "rating": "excellent"
+    },
+    {
+      "id": "lawrence",
+      "name": "Lawrence",
+      "order": 22,
+      "on_time_pct": 91.8,
+      "total_arrivals": 2208,
+      "rating": "excellent"
+    },
+    {
+      "id": "santa_clara",
+      "name": "Santa Clara",
+      "order": 23,
+      "on_time_pct": 91.3,
+      "total_arrivals": 2185,
+      "rating": "excellent"
+    },
+    {
+      "id": "college_park",
+      "name": "College Park",
+      "order": 24,
+      "on_time_pct": 90.8,
+      "total_arrivals": 76,
+      "rating": "excellent"
+    },
+    {
+      "id": "sj_diridon",
+      "name": "San Jose Diridon",
+      "order": 25,
+      "on_time_pct": 100.0,
+      "total_arrivals": 1251,
+      "rating": "excellent"
+    },
+    {
+      "id": "tamien",
+      "name": "Tamien",
+      "order": 26,
+      "on_time_pct": 82.6,
+      "total_arrivals": 144,
+      "rating": "good"
+    },
+    {
+      "id": "capitol",
+      "name": "Capitol",
+      "order": 27,
+      "on_time_pct": 89.5,
+      "total_arrivals": 143,
+      "rating": "good"
+    },
+    {
+      "id": "blossom_hill",
+      "name": "Blossom Hill",
+      "order": 28,
+      "on_time_pct": 90.9,
+      "total_arrivals": 143,
+      "rating": "excellent"
+    },
+    {
+      "id": "morgan_hill",
+      "name": "Morgan Hill",
+      "order": 29,
+      "on_time_pct": 92.3,
+      "total_arrivals": 143,
+      "rating": "excellent"
+    },
+    {
+      "id": "san_martin",
+      "name": "San Martin",
+      "order": 30,
+      "on_time_pct": 93.7,
+      "total_arrivals": 142,
+      "rating": "excellent"
+    }
+  ]
+}

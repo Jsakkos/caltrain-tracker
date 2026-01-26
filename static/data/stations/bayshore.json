@@ -1,0 +1,53 @@
+{
+  "id": "bayshore",
+  "name": "Bayshore",
+  "order": 3,
+  "lat": 37.70766,
+  "lon": -122.401665,
+  "image_prompt": "Isometric coastal station, tiny bay with sailboats, simplified industrial buildings, seagulls as simple shapes, warm orange and blue palette",
+  "metrics": {
+    "total_arrivals": 1945,
+    "on_time_pct": 90.1,
+    "avg_delay": 1.5,
+    "max_delay": 53.0,
+    "status_breakdown": {
+      "on_time": 1752,
+      "minor": 169,
+      "major": 24
+    },
+    "busiest_hour": 8,
+    "busiest_hour_name": "8:00 - 9:00",
+    "daily_trend": [
+      {
+        "date": "2025-12-22",
+        "value": 93.2
+      },
+      {
+        "date": "2025-12-23",
+        "value": 93.2
+      },
+      {
+        "date": "2025-12-24",
+        "value": 82.2
+      },
+      {
+        "date": "2025-12-25",
+        "value": 73.0
+      },
+      {
+        "date": "2025-12-26",
+        "value": 89.0
+      },
+      {
+        "date": "2025-12-27",
+        "value": 95.3
+      },
+      {
+        "date": "2025-12-28",
+        "value": 83.3
+      }
+    ],
+    "rating": "excellent"
+  },
+  "generated_at": "2025-12-30T18:12:50.957502"
+}

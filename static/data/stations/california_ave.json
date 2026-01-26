@@ -1,0 +1,53 @@
+{
+  "id": "california_ave",
+  "name": "California Avenue",
+  "order": 18,
+  "lat": 37.428834,
+  "lon": -122.14113,
+  "image_prompt": "Isometric startup offices, food truck row, young professionals, modern glass buildings, innovation vibes",
+  "metrics": {
+    "total_arrivals": 2212,
+    "on_time_pct": 91.1,
+    "avg_delay": 1.2,
+    "max_delay": 69.8,
+    "status_breakdown": {
+      "on_time": 2016,
+      "minor": 177,
+      "major": 19
+    },
+    "busiest_hour": 9,
+    "busiest_hour_name": "9:00 - 10:00",
+    "daily_trend": [
+      {
+        "date": "2025-12-22",
+        "value": 90.8
+      },
+      {
+        "date": "2025-12-23",
+        "value": 93.1
+      },
+      {
+        "date": "2025-12-24",
+        "value": 87.7
+      },
+      {
+        "date": "2025-12-25",
+        "value": 84.1
+      },
+      {
+        "date": "2025-12-26",
+        "value": 93.2
+      },
+      {
+        "date": "2025-12-27",
+        "value": 98.4
+      },
+      {
+        "date": "2025-12-28",
+        "value": 84.6
+      }
+    ],
+    "rating": "excellent"
+  },
+  "generated_at": "2025-12-30T18:12:51.076162"
+}

@@ -1,0 +1,407 @@
+{
+    "stations": [
+        {
+            "id": "san_francisco",
+            "name": "San Francisco",
+            "stop_ids": [
+                "70011",
+                "70012"
+            ],
+            "order": 1,
+            "direction": "terminus",
+            "lat": 37.776404,
+            "lon": -122.394911,
+            "image_prompt": "Isometric cartoon train station with tiny Caltrain, San Francisco skyline with Transamerica Pyramid and Salesforce Tower, miniature commuters, pastel colors, whimsical Silicon Valley TV style"
+        },
+        {
+            "id": "22nd_street",
+            "name": "22nd Street",
+            "stop_ids": [
+                "70021",
+                "70022"
+            ],
+            "order": 2,
+            "direction": "intermediate",
+            "lat": 37.756972,
+            "lon": -122.392492,
+            "image_prompt": "Isometric cartoon elevated platform, colorful Victorian row houses, tiny fog clouds, miniature hipsters, industrial Dogpatch vibes, playful art style"
+        },
+        {
+            "id": "bayshore",
+            "name": "Bayshore",
+            "stop_ids": [
+                "70031",
+                "70032"
+            ],
+            "order": 3,
+            "direction": "intermediate",
+            "lat": 37.70766,
+            "lon": -122.401665,
+            "image_prompt": "Isometric coastal station, tiny bay with sailboats, simplified industrial buildings, seagulls as simple shapes, warm orange and blue palette"
+        },
+        {
+            "id": "south_sf",
+            "name": "South San Francisco",
+            "stop_ids": [
+                "70041",
+                "70042"
+            ],
+            "order": 4,
+            "direction": "intermediate",
+            "lat": 37.6559414157,
+            "lon": -122.4049790057,
+            "image_prompt": "Isometric hillside with SSF letters, cute biotech cubes, cartoon fog rolling in, miniature shuttle buses, tech campus vibes"
+        },
+        {
+            "id": "san_bruno",
+            "name": "San Bruno",
+            "stop_ids": [
+                "70051",
+                "70052"
+            ],
+            "order": 5,
+            "direction": "intermediate",
+            "lat": 37.6304603353,
+            "lon": -122.4117090415,
+            "image_prompt": "Isometric mountain scene, cozy station platform, BART trains as colorful blocks, clear sky with puffy clouds"
+        },
+        {
+            "id": "millbrae",
+            "name": "Millbrae",
+            "stop_ids": [
+                "70061",
+                "70062"
+            ],
+            "order": 6,
+            "direction": "intermediate",
+            "lat": 37.5999,
+            "lon": -122.38675,
+            "image_prompt": "Isometric transit hub, BART and Caltrain as toy trains, tiny airplanes overhead, glass building cubes, bustling miniature people"
+        },
+        {
+            "id": "broadway",
+            "name": "Broadway",
+            "stop_ids": [
+                "70071",
+                "70072"
+            ],
+            "order": 7,
+            "direction": "intermediate",
+            "lat": 37.58726,
+            "lon": -122.362,
+            "image_prompt": "Isometric tree-lined street, tiny cafe with umbrellas, charming platform, spring flowers, pastel color scheme"
+        },
+        {
+            "id": "burlingame",
+            "name": "Burlingame",
+            "stop_ids": [
+                "70081",
+                "70082"
+            ],
+            "order": 8,
+            "direction": "intermediate",
+            "lat": 37.57985,
+            "lon": -122.34418,
+            "image_prompt": "Isometric downtown shopping, European-style storefronts, outdoor dining miniatures, palm trees, upscale suburban charm"
+        },
+        {
+            "id": "san_mateo",
+            "name": "San Mateo",
+            "stop_ids": [
+                "70091",
+                "70092"
+            ],
+            "order": 9,
+            "direction": "intermediate",
+            "lat": 37.56824,
+            "lon": -122.3239,
+            "image_prompt": "Isometric Spanish-style buildings, palm trees, Central Park with tiny ducks, sunny California vibes, warm colors"
+        },
+        {
+            "id": "hayward_park",
+            "name": "Hayward Park",
+            "stop_ids": [
+                "70101",
+                "70102"
+            ],
+            "order": 10,
+            "direction": "intermediate",
+            "lat": 37.553161,
+            "lon": -122.309494,
+            "image_prompt": "Isometric park with sports fields, tiny joggers and cyclists, family picnic scene, green grass, playful atmosphere"
+        },
+        {
+            "id": "hillsdale",
+            "name": "Hillsdale",
+            "stop_ids": [
+                "70111",
+                "70112"
+            ],
+            "order": 11,
+            "direction": "intermediate",
+            "lat": 37.5423926779,
+            "lon": -122.3016120605,
+            "image_prompt": "Isometric mall building, elevated pedestrian crossing, shopping bags, busy parking lot with tiny cars"
+        },
+        {
+            "id": "belmont",
+            "name": "Belmont",
+            "stop_ids": [
+                "70121",
+                "70122"
+            ],
+            "order": 12,
+            "direction": "intermediate",
+            "lat": 37.52133,
+            "lon": -122.2763,
+            "image_prompt": "Isometric hillside view, peaceful residential homes, oak trees, quiet morning atmosphere, soft lighting"
+        },
+        {
+            "id": "san_carlos",
+            "name": "San Carlos",
+            "stop_ids": [
+                "70131",
+                "70132"
+            ],
+            "order": 13,
+            "direction": "intermediate",
+            "lat": 37.508033,
+            "lon": -122.2602,
+            "image_prompt": "Isometric small town main street, farmers market stalls, local shop awnings, community gathering, friendly vibes"
+        },
+        {
+            "id": "redwood_city",
+            "name": "Redwood City",
+            "stop_ids": [
+                "70141",
+                "70142"
+            ],
+            "order": 14,
+            "direction": "intermediate",
+            "lat": 37.485865,
+            "lon": -122.2315,
+            "image_prompt": "Isometric Fox Theatre marquee, courthouse dome, palm trees, downtown revival scene, vibrant colors"
+        },
+        {
+            "id": "stanford",
+            "name": "Stanford",
+            "stop_ids": [
+                "2537740",
+                "2537744"
+            ],
+            "order": 15,
+            "direction": "intermediate",
+            "lat": 37.43895,
+            "lon": -122.15715,
+            "image_prompt": "Isometric red-tiled campus buildings, palm drive, students with backpacks, Cardinal red accents, academic atmosphere"
+        },
+        {
+            "id": "menlo_park",
+            "name": "Menlo Park",
+            "stop_ids": [
+                "70161",
+                "70162"
+            ],
+            "order": 16,
+            "direction": "intermediate",
+            "lat": 37.4548,
+            "lon": -122.18245,
+            "image_prompt": "Isometric VC office buildings, tech startup signs, upscale coffee shops, tree-lined streets, money bag icons"
+        },
+        {
+            "id": "palo_alto",
+            "name": "Palo Alto",
+            "stop_ids": [
+                "70171",
+                "70172"
+            ],
+            "order": 17,
+            "direction": "intermediate",
+            "lat": 37.44322,
+            "lon": -122.16429,
+            "image_prompt": "Isometric University Avenue, bookstores and coffee shops, Stanford arch, tech workers on laptops, Mediterranean tiles"
+        },
+        {
+            "id": "california_ave",
+            "name": "California Avenue",
+            "stop_ids": [
+                "70191",
+                "70192"
+            ],
+            "order": 18,
+            "direction": "intermediate",
+            "lat": 37.428834,
+            "lon": -122.14113,
+            "image_prompt": "Isometric startup offices, food truck row, young professionals, modern glass buildings, innovation vibes"
+        },
+        {
+            "id": "san_antonio",
+            "name": "San Antonio",
+            "stop_ids": [
+                "70201",
+                "70202"
+            ],
+            "order": 19,
+            "direction": "intermediate",
+            "lat": 37.4072394315,
+            "lon": -122.1071155621,
+            "image_prompt": "Isometric corporate campus, tech logos, shuttle buses, modern transit station, Mountain View skyline"
+        },
+        {
+            "id": "mountain_view",
+            "name": "Mountain View",
+            "stop_ids": [
+                "70211",
+                "70212"
+            ],
+            "order": 20,
+            "direction": "intermediate",
+            "lat": 37.395067,
+            "lon": -122.07722,
+            "image_prompt": "Isometric Google-inspired colorful buildings, tech shuttles, Castro Street with restaurants, innovation hub atmosphere"
+        },
+        {
+            "id": "sunnyvale",
+            "name": "Sunnyvale",
+            "stop_ids": [
+                "70221",
+                "70222"
+            ],
+            "order": 21,
+            "direction": "intermediate",
+            "lat": 37.378934,
+            "lon": -122.0315,
+            "image_prompt": "Isometric historic Murphy Avenue, aerospace rocket decoration, downtown shops, suburban tech blend"
+        },
+        {
+            "id": "lawrence",
+            "name": "Lawrence",
+            "stop_ids": [
+                "70231",
+                "70232"
+            ],
+            "order": 22,
+            "direction": "intermediate",
+            "lat": 37.3707,
+            "lon": -121.9969,
+            "image_prompt": "Isometric Apple Park spaceship simplified, campus shuttles, modern architecture, Cupertino influence"
+        },
+        {
+            "id": "santa_clara",
+            "name": "Santa Clara",
+            "stop_ids": [
+                "70241",
+                "70242"
+            ],
+            "order": 23,
+            "direction": "intermediate",
+            "lat": 37.353384,
+            "lon": -121.936465,
+            "image_prompt": "Isometric Levis Stadium, Great America roller coaster, tech HQ buildings, sports and entertainment mix"
+        },
+        {
+            "id": "college_park",
+            "name": "College Park",
+            "stop_ids": [
+                "70251",
+                "70252"
+            ],
+            "order": 24,
+            "direction": "intermediate",
+            "lat": 37.34289,
+            "lon": -121.91565,
+            "image_prompt": "Isometric San Jose State tower, students with backpacks, SJSU colors, urban campus scene"
+        },
+        {
+            "id": "sj_diridon",
+            "name": "San Jose Diridon",
+            "stop_ids": [
+                "70261",
+                "70262"
+            ],
+            "order": 25,
+            "direction": "intermediate",
+            "lat": 37.329694,
+            "lon": -121.903208,
+            "image_prompt": "Isometric major transit hub, SAP Center arena, ACE and Capitol Corridor trains, historic station clock tower"
+        },
+        {
+            "id": "tamien",
+            "name": "Tamien",
+            "stop_ids": [
+                "70271",
+                "70272"
+            ],
+            "order": 26,
+            "direction": "intermediate",
+            "lat": 37.31269,
+            "lon": -121.8847,
+            "image_prompt": "Isometric VTA light rail connection, multi-level parking, Valley Transit buses, suburban gateway"
+        },
+        {
+            "id": "capitol",
+            "name": "Capitol",
+            "stop_ids": [
+                "70281",
+                "70282"
+            ],
+            "order": 27,
+            "direction": "intermediate",
+            "lat": 37.284016,
+            "lon": -121.841899,
+            "image_prompt": "Isometric residential neighborhood, Guadalupe River with tiny kayaks, suburban homes, community park"
+        },
+        {
+            "id": "blossom_hill",
+            "name": "Blossom Hill",
+            "stop_ids": [
+                "70291",
+                "70292"
+            ],
+            "order": 28,
+            "direction": "intermediate",
+            "lat": 37.252606,
+            "lon": -121.797907,
+            "image_prompt": "Isometric Almaden Valley hills, cherry blossom trees in pink, suburban homes, scenic backdrop"
+        },
+        {
+            "id": "morgan_hill",
+            "name": "Morgan Hill",
+            "stop_ids": [
+                "70301",
+                "70302"
+            ],
+            "order": 29,
+            "direction": "intermediate",
+            "lat": 37.129644,
+            "lon": -121.650558,
+            "image_prompt": "Isometric wine country, vineyard rows, small-town main street, Coyote Valley in distance"
+        },
+        {
+            "id": "san_martin",
+            "name": "San Martin",
+            "stop_ids": [
+                "70311",
+                "70312"
+            ],
+            "order": 30,
+            "direction": "intermediate",
+            "lat": 37.085984,
+            "lon": -121.61048,
+            "image_prompt": "Isometric rural farmland, agricultural pattern fields, Mount Hamilton silhouette, quiet country station"
+        },
+        {
+            "id": "gilroy",
+            "name": "Gilroy",
+            "stop_ids": [
+                "70321",
+                "70322"
+            ],
+            "order": 31,
+            "direction": "terminus",
+            "lat": 37.004466,
+            "lon": -121.566727,
+            "image_prompt": "Isometric garlic farm, Gilroy Gardens outline, small-town terminus, agricultural heritage, garlic icons"
+        }
+    ]
+}
