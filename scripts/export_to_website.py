@@ -45,6 +45,30 @@ def export_stats():
         print(f"⚠ No summary_stats.json found at {src}")
 
 
+def export_dashboard_data():
+    """Copy all dashboard JSON data files to website."""
+    dashboard_files = [
+        "stats.json",
+        "daily_performance.json",
+        "station_performance.json",
+        "train_performance.json",
+        "hourly_heatmap.json",
+        "commute_analysis.json",
+        "weekly_summary.json",
+        "monthly_summary.json",
+    ]
+    count = 0
+    for filename in dashboard_files:
+        src = SOURCE_DATA / filename
+        if src.exists():
+            shutil.copy(src, OUTPUT_DIR / filename)
+            count += 1
+            print(f"  - Copied {filename}")
+        else:
+            print(f"  ⚠ Missing {filename}")
+    print(f"✓ Exported {count}/{len(dashboard_files)} dashboard data files")
+
+
 def export_plots():
     """Copy Plotly HTML plots to website."""
     plots_dir = OUTPUT_DIR / "plots"
@@ -123,6 +147,7 @@ def main():
     # Run export steps
     ensure_output_dirs()
     export_stats()
+    export_dashboard_data()
     export_plots()
     export_metadata()
     

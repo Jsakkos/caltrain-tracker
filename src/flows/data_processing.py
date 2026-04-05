@@ -692,6 +692,212 @@ def generate_summary_stats(processed_df: pd.DataFrame) -> Dict[str, Any]:
         
         return summary
 
+@task
+def generate_dashboard_data(processed_df: pd.DataFrame) -> Dict[str, str]:
+    """
+    Generate rich JSON data files for the website dashboard.
+
+    Produces multiple JSON files from the processed DataFrame, each targeting
+    a specific dashboard component (daily trends, station rankings, heatmaps, etc.).
+
+    Args:
+        processed_df: Processed arrival data with delay calculations
+
+    Returns:
+        Dict mapping filename to output path
+    """
+    import json
+
+    output_dir = os.path.join(STATIC_CONTENT_PATH, 'data')
+    os.makedirs(output_dir, exist_ok=True)
+    outputs = {}
+
+    if processed_df.empty:
+        print("WARNING: Empty DataFrame, generating empty dashboard data")
+        return outputs
+
+    # Deduplicate: one record per trip-stop-date
+    df = processed_df.drop_duplicates(subset=['trip_id', 'stop_id', 'date']).copy()
+    df['date'] = pd.to_datetime(df['date'])
+    df['day_of_week'] = df['date'].dt.dayofweek  # 0=Monday, 6=Sunday
+    df['day_name'] = df['date'].dt.strftime('%A')
+    df['month'] = df['date'].dt.to_period('M').astype(str)
+    df['week_start'] = (df['date'] - pd.to_timedelta(df['day_of_week'], unit='D')).dt.strftime('%Y-%m-%d')
+
+    total = len(df)
+    on_time = len(df[df['delay_severity'] == 'On Time'])
+    minor = len(df[df['delay_severity'] == 'Minor'])
+    major = len(df[df['delay_severity'] == 'Major'])
+
+    # --- 1. Enhanced stats.json ---
+    last_7d = df[df['date'] >= df['date'].max() - pd.Timedelta(days=7)]
+    last_30d = df[df['date'] >= df['date'].max() - pd.Timedelta(days=30)]
+
+    stats = {
+        'on_time_percentage': round(on_time / total * 100, 2) if total else 0,
+        'minor_delay_percentage': round(minor / total * 100, 2) if total else 0,
+        'major_delay_percentage': round(major / total * 100, 2) if total else 0,
+        'total_arrivals': total,
+        'avg_delay_minutes': round(float(df['delay_minutes'].mean()), 2),
+        'median_delay_minutes': round(float(df['delay_minutes'].median()), 2),
+        'last_updated': datetime.now().isoformat(),
+        'date_range': {
+            'start': df['date'].min().strftime('%Y-%m-%d'),
+            'end': df['date'].max().strftime('%Y-%m-%d'),
+        },
+        'days_tracked': int((df['date'].max() - df['date'].min()).days) + 1,
+        'rolling_7d_on_time': round(
+            len(last_7d[last_7d['delay_severity'] == 'On Time']) / len(last_7d) * 100, 2
+        ) if len(last_7d) > 0 else 0,
+        'rolling_30d_on_time': round(
+            len(last_30d[last_30d['delay_severity'] == 'On Time']) / len(last_30d) * 100, 2
+        ) if len(last_30d) > 0 else 0,
+    }
+
+    path = os.path.join(output_dir, 'stats.json')
+    with open(path, 'w') as f:
+        json.dump(stats, f, indent=2)
+    outputs['stats.json'] = path
+    print(f"Generated stats.json ({total} arrivals)")
+
+    # --- 2. daily_performance.json ---
+    daily = df.groupby(df['date'].dt.strftime('%Y-%m-%d')).agg(
+        total_trips=('trip_id', 'count'),
+        on_time_count=('delay_severity', lambda x: (x == 'On Time').sum()),
+        minor_count=('delay_severity', lambda x: (x == 'Minor').sum()),
+        major_count=('delay_severity', lambda x: (x == 'Major').sum()),
+        avg_delay_min=('delay_minutes', 'mean'),
+    ).reset_index()
+    daily.columns = ['date', 'total_trips', 'on_time_count', 'minor_count', 'major_count', 'avg_delay_min']
+    daily['on_time_pct'] = round(daily['on_time_count'] / daily['total_trips'] * 100, 1)
+    daily['minor_pct'] = round(daily['minor_count'] / daily['total_trips'] * 100, 1)
+    daily['major_pct'] = round(daily['major_count'] / daily['total_trips'] * 100, 1)
+    daily['avg_delay_min'] = round(daily['avg_delay_min'], 2)
+    daily = daily.sort_values('date')
+
+    path = os.path.join(output_dir, 'daily_performance.json')
+    with open(path, 'w') as f:
+        json.dump(daily.to_dict('records'), f)
+    outputs['daily_performance.json'] = path
+    print(f"Generated daily_performance.json ({len(daily)} days)")
+
+    # --- 3. station_performance.json ---
+    station = df.groupby(['stop_id', 'stop_name']).agg(
+        total_arrivals=('trip_id', 'count'),
+        on_time_count=('delay_severity', lambda x: (x == 'On Time').sum()),
+        avg_delay_min=('delay_minutes', 'mean'),
+        median_delay_min=('delay_minutes', 'median'),
+    ).reset_index()
+    station['on_time_pct'] = round(station['on_time_count'] / station['total_arrivals'] * 100, 1)
+    station['avg_delay_min'] = round(station['avg_delay_min'], 2)
+    station['median_delay_min'] = round(station['median_delay_min'], 2)
+    # Add lat/lon from first occurrence if available
+    if 'stop_lat' in df.columns and 'stop_lon' in df.columns:
+        station_coords = df.drop_duplicates('stop_id')[['stop_id', 'stop_lat', 'stop_lon']]
+        station = station.merge(station_coords, on='stop_id', how='left')
+    else:
+        station['stop_lat'] = None
+        station['stop_lon'] = None
+    station['stop_id'] = station['stop_id'].astype(int)
+    station = station.sort_values('on_time_pct', ascending=False)
+
+    path = os.path.join(output_dir, 'station_performance.json')
+    with open(path, 'w') as f:
+        json.dump(station.to_dict('records'), f)
+    outputs['station_performance.json'] = path
+    print(f"Generated station_performance.json ({len(station)} stations)")
+
+    # --- 4. train_performance.json ---
+    train = df.groupby('trip_id').agg(
+        total_stops=('stop_id', 'count'),
+        on_time_count=('delay_severity', lambda x: (x == 'On Time').sum()),
+        avg_delay_min=('delay_minutes', 'mean'),
+        days_observed=('date', 'nunique'),
+    ).reset_index()
+    train['on_time_pct'] = round(train['on_time_count'] / train['total_stops'] * 100, 1)
+    train['avg_delay_min'] = round(train['avg_delay_min'], 2)
+    train['trip_id'] = train['trip_id'].astype(int)
+    train = train.sort_values('on_time_pct', ascending=False)
+
+    path = os.path.join(output_dir, 'train_performance.json')
+    with open(path, 'w') as f:
+        json.dump(train.to_dict('records'), f)
+    outputs['train_performance.json'] = path
+    print(f"Generated train_performance.json ({len(train)} trains)")
+
+    # --- 5. hourly_heatmap.json ---
+    heatmap = df.groupby(['day_of_week', 'day_name', 'hour']).agg(
+        total=('trip_id', 'count'),
+        on_time_count=('delay_severity', lambda x: (x == 'On Time').sum()),
+        avg_delay_min=('delay_minutes', 'mean'),
+    ).reset_index()
+    heatmap['on_time_pct'] = round(heatmap['on_time_count'] / heatmap['total'] * 100, 1)
+    heatmap['avg_delay_min'] = round(heatmap['avg_delay_min'], 2)
+
+    path = os.path.join(output_dir, 'hourly_heatmap.json')
+    with open(path, 'w') as f:
+        json.dump(heatmap.to_dict('records'), f)
+    outputs['hourly_heatmap.json'] = path
+    print(f"Generated hourly_heatmap.json ({len(heatmap)} cells)")
+
+    # --- 6. commute_analysis.json ---
+    commute = {}
+    for period in df['commute_period'].unique():
+        subset = df[df['commute_period'] == period]
+        period_total = len(subset)
+        commute[period] = {
+            'total_trips': period_total,
+            'on_time_pct': round(len(subset[subset['delay_severity'] == 'On Time']) / period_total * 100, 1) if period_total else 0,
+            'minor_pct': round(len(subset[subset['delay_severity'] == 'Minor']) / period_total * 100, 1) if period_total else 0,
+            'major_pct': round(len(subset[subset['delay_severity'] == 'Major']) / period_total * 100, 1) if period_total else 0,
+            'avg_delay_min': round(float(subset['delay_minutes'].mean()), 2) if period_total else 0,
+            'median_delay_min': round(float(subset['delay_minutes'].median()), 2) if period_total else 0,
+        }
+
+    path = os.path.join(output_dir, 'commute_analysis.json')
+    with open(path, 'w') as f:
+        json.dump(commute, f, indent=2)
+    outputs['commute_analysis.json'] = path
+    print(f"Generated commute_analysis.json ({len(commute)} periods)")
+
+    # --- 7. weekly_summary.json ---
+    weekly = df.groupby('week_start').agg(
+        total_trips=('trip_id', 'count'),
+        on_time_count=('delay_severity', lambda x: (x == 'On Time').sum()),
+        avg_delay_min=('delay_minutes', 'mean'),
+        days_with_data=('date', 'nunique'),
+    ).reset_index()
+    weekly['on_time_pct'] = round(weekly['on_time_count'] / weekly['total_trips'] * 100, 1)
+    weekly['avg_delay_min'] = round(weekly['avg_delay_min'], 2)
+    weekly = weekly.sort_values('week_start')
+
+    path = os.path.join(output_dir, 'weekly_summary.json')
+    with open(path, 'w') as f:
+        json.dump(weekly.to_dict('records'), f)
+    outputs['weekly_summary.json'] = path
+    print(f"Generated weekly_summary.json ({len(weekly)} weeks)")
+
+    # --- 8. monthly_summary.json ---
+    monthly = df.groupby('month').agg(
+        total_trips=('trip_id', 'count'),
+        on_time_count=('delay_severity', lambda x: (x == 'On Time').sum()),
+        avg_delay_min=('delay_minutes', 'mean'),
+        days_with_data=('date', 'nunique'),
+    ).reset_index()
+    monthly['on_time_pct'] = round(monthly['on_time_count'] / monthly['total_trips'] * 100, 1)
+    monthly['avg_delay_min'] = round(monthly['avg_delay_min'], 2)
+    monthly = monthly.sort_values('month')
+
+    path = os.path.join(output_dir, 'monthly_summary.json')
+    with open(path, 'w') as f:
+        json.dump(monthly.to_dict('records'), f)
+    outputs['monthly_summary.json'] = path
+    print(f"Generated monthly_summary.json ({len(monthly)} months)")
+
+    print(f"Dashboard data generation complete: {len(outputs)} files")
+    return outputs
+
+
 @flow(name="Process Train Data and Generate Visualizations",log_prints=True)
 def process_data_flow():
     """
@@ -768,11 +974,15 @@ def process_data_flow():
     
     # Generate summary statistics
     summary_stats = generate_summary_stats(processed_df)
-    
+
+    # Generate rich dashboard data files
+    dashboard_outputs = generate_dashboard_data(processed_df)
+
     print("Train data processing flow completed successfully")
     return {
         'plots': [daily_stats_plot, commute_delay_plot],
-        'summary': summary_stats
+        'summary': summary_stats,
+        'dashboard_data': dashboard_outputs
     }
 
 if __name__ == "__main__":

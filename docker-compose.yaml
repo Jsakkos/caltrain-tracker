@@ -25,6 +25,7 @@ services:
       - prefect_data:/root/.prefect
       - ./src:/app/src
       - ./data:/app/data  # Mount data directory for SQLite database
+      - ./static:/app/static  # Mount static directory for processed data output
     environment:
       - PREFECT_UI_URL=http://${HOST}:4200/api
       - PREFECT_API_URL=http://${HOST}:4200/api
