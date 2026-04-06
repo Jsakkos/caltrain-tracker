@@ -1,0 +1,53 @@
+{
+  "id": "san_martin",
+  "name": "San Martin",
+  "order": 30,
+  "lat": 37.085984,
+  "lon": -121.61048,
+  "image_prompt": "Isometric rural farmland, agricultural pattern fields, Mount Hamilton silhouette, quiet country station",
+  "metrics": {
+    "total_arrivals": 142,
+    "on_time_pct": 93.7,
+    "avg_delay": 0.2,
+    "max_delay": 12.0,
+    "status_breakdown": {
+      "on_time": 133,
+      "minor": 9,
+      "major": 0
+    },
+    "busiest_hour": 7,
+    "busiest_hour_name": "7:00 - 8:00",
+    "daily_trend": [
+      {
+        "date": "2025-12-16",
+        "value": 100.0
+      },
+      {
+        "date": "2025-12-17",
+        "value": 100.0
+      },
+      {
+        "date": "2025-12-18",
+        "value": 100.0
+      },
+      {
+        "date": "2025-12-19",
+        "value": 85.7
+      },
+      {
+        "date": "2025-12-22",
+        "value": 75.0
+      },
+      {
+        "date": "2025-12-23",
+        "value": 75.0
+      },
+      {
+        "date": "2025-12-26",
+        "value": 100.0
+      }
+    ],
+    "rating": "excellent"
+  },
+  "generated_at": "2025-12-30T18:12:51.168115"
+}

@@ -1,0 +1,53 @@
+{
+  "id": "hillsdale",
+  "name": "Hillsdale",
+  "order": 11,
+  "lat": 37.5423926779,
+  "lon": -122.3016120605,
+  "image_prompt": "Isometric mall building, elevated pedestrian crossing, shopping bags, busy parking lot with tiny cars",
+  "metrics": {
+    "total_arrivals": 2456,
+    "on_time_pct": 92.6,
+    "avg_delay": 1.5,
+    "max_delay": 68.8,
+    "status_breakdown": {
+      "on_time": 2275,
+      "minor": 158,
+      "major": 23
+    },
+    "busiest_hour": 16,
+    "busiest_hour_name": "16:00 - 17:00",
+    "daily_trend": [
+      {
+        "date": "2025-12-22",
+        "value": 93.1
+      },
+      {
+        "date": "2025-12-23",
+        "value": 96.0
+      },
+      {
+        "date": "2025-12-24",
+        "value": 91.8
+      },
+      {
+        "date": "2025-12-25",
+        "value": 95.2
+      },
+      {
+        "date": "2025-12-26",
+        "value": 90.1
+      },
+      {
+        "date": "2025-12-27",
+        "value": 100.0
+      },
+      {
+        "date": "2025-12-28",
+        "value": 83.3
+      }
+    ],
+    "rating": "excellent"
+  },
+  "generated_at": "2025-12-30T18:12:51.024195"
+}

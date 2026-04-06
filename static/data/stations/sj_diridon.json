@@ -1,0 +1,53 @@
+{
+  "id": "sj_diridon",
+  "name": "San Jose Diridon",
+  "order": 25,
+  "lat": 37.329694,
+  "lon": -121.903208,
+  "image_prompt": "Isometric major transit hub, SAP Center arena, ACE and Capitol Corridor trains, historic station clock tower",
+  "metrics": {
+    "total_arrivals": 1251,
+    "on_time_pct": 100.0,
+    "avg_delay": -36.5,
+    "max_delay": -0.1,
+    "status_breakdown": {
+      "on_time": 1251,
+      "minor": 0,
+      "major": 0
+    },
+    "busiest_hour": 16,
+    "busiest_hour_name": "16:00 - 17:00",
+    "daily_trend": [
+      {
+        "date": "2025-12-22",
+        "value": 100.0
+      },
+      {
+        "date": "2025-12-23",
+        "value": 100.0
+      },
+      {
+        "date": "2025-12-24",
+        "value": 100.0
+      },
+      {
+        "date": "2025-12-25",
+        "value": 100.0
+      },
+      {
+        "date": "2025-12-26",
+        "value": 100.0
+      },
+      {
+        "date": "2025-12-27",
+        "value": 100.0
+      },
+      {
+        "date": "2025-12-28",
+        "value": 100.0
+      }
+    ],
+    "rating": "excellent"
+  },
+  "generated_at": "2025-12-30T18:12:51.131857"
+}

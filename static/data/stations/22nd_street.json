@@ -1,0 +1,53 @@
+{
+  "id": "22nd_street",
+  "name": "22nd Street",
+  "order": 2,
+  "lat": 37.756972,
+  "lon": -122.392492,
+  "image_prompt": "Isometric cartoon elevated platform, colorful Victorian row houses, tiny fog clouds, miniature hipsters, industrial Dogpatch vibes, playful art style",
+  "metrics": {
+    "total_arrivals": 2467,
+    "on_time_pct": 90.4,
+    "avg_delay": 1.5,
+    "max_delay": 66.1,
+    "status_breakdown": {
+      "on_time": 2230,
+      "minor": 204,
+      "major": 33
+    },
+    "busiest_hour": 8,
+    "busiest_hour_name": "8:00 - 9:00",
+    "daily_trend": [
+      {
+        "date": "2025-12-22",
+        "value": 96.1
+      },
+      {
+        "date": "2025-12-23",
+        "value": 93.1
+      },
+      {
+        "date": "2025-12-24",
+        "value": 84.9
+      },
+      {
+        "date": "2025-12-25",
+        "value": 77.8
+      },
+      {
+        "date": "2025-12-26",
+        "value": 88.2
+      },
+      {
+        "date": "2025-12-27",
+        "value": 96.9
+      },
+      {
+        "date": "2025-12-28",
+        "value": 83.3
+      }
+    ],
+    "rating": "excellent"
+  },
+  "generated_at": "2025-12-30T18:12:50.939143"
+}

@@ -1,0 +1,53 @@
+{
+  "id": "redwood_city",
+  "name": "Redwood City",
+  "order": 14,
+  "lat": 37.485865,
+  "lon": -122.2315,
+  "image_prompt": "Isometric Fox Theatre marquee, courthouse dome, palm trees, downtown revival scene, vibrant colors",
+  "metrics": {
+    "total_arrivals": 2430,
+    "on_time_pct": 93.6,
+    "avg_delay": 1.0,
+    "max_delay": 67.8,
+    "status_breakdown": {
+      "on_time": 2274,
+      "minor": 131,
+      "major": 25
+    },
+    "busiest_hour": 16,
+    "busiest_hour_name": "16:00 - 17:00",
+    "daily_trend": [
+      {
+        "date": "2025-12-22",
+        "value": 96.0
+      },
+      {
+        "date": "2025-12-23",
+        "value": 98.0
+      },
+      {
+        "date": "2025-12-24",
+        "value": 95.8
+      },
+      {
+        "date": "2025-12-25",
+        "value": 96.8
+      },
+      {
+        "date": "2025-12-26",
+        "value": 92.0
+      },
+      {
+        "date": "2025-12-27",
+        "value": 98.4
+      },
+      {
+        "date": "2025-12-28",
+        "value": 83.3
+      }
+    ],
+    "rating": "excellent"
+  },
+  "generated_at": "2025-12-30T18:12:51.049683"
+}

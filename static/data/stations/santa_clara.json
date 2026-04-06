@@ -1,0 +1,53 @@
+{
+  "id": "santa_clara",
+  "name": "Santa Clara",
+  "order": 23,
+  "lat": 37.353384,
+  "lon": -121.936465,
+  "image_prompt": "Isometric Levis Stadium, Great America roller coaster, tech HQ buildings, sports and entertainment mix",
+  "metrics": {
+    "total_arrivals": 2185,
+    "on_time_pct": 91.3,
+    "avg_delay": 0.6,
+    "max_delay": 58.0,
+    "status_breakdown": {
+      "on_time": 1994,
+      "minor": 174,
+      "major": 17
+    },
+    "busiest_hour": 16,
+    "busiest_hour_name": "16:00 - 17:00",
+    "daily_trend": [
+      {
+        "date": "2025-12-22",
+        "value": 90.8
+      },
+      {
+        "date": "2025-12-23",
+        "value": 90.8
+      },
+      {
+        "date": "2025-12-24",
+        "value": 79.2
+      },
+      {
+        "date": "2025-12-25",
+        "value": 83.9
+      },
+      {
+        "date": "2025-12-26",
+        "value": 90.8
+      },
+      {
+        "date": "2025-12-27",
+        "value": 96.8
+      },
+      {
+        "date": "2025-12-28",
+        "value": 83.3
+      }
+    ],
+    "rating": "excellent"
+  },
+  "generated_at": "2025-12-30T18:12:51.116658"
+}

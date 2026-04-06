@@ -1,0 +1,53 @@
+{
+  "id": "san_carlos",
+  "name": "San Carlos",
+  "order": 13,
+  "lat": 37.508033,
+  "lon": -122.2602,
+  "image_prompt": "Isometric small town main street, farmers market stalls, local shop awnings, community gathering, friendly vibes",
+  "metrics": {
+    "total_arrivals": 1915,
+    "on_time_pct": 91.7,
+    "avg_delay": 1.1,
+    "max_delay": 58.0,
+    "status_breakdown": {
+      "on_time": 1757,
+      "minor": 143,
+      "major": 15
+    },
+    "busiest_hour": 9,
+    "busiest_hour_name": "9:00 - 10:00",
+    "daily_trend": [
+      {
+        "date": "2025-12-22",
+        "value": 94.4
+      },
+      {
+        "date": "2025-12-23",
+        "value": 98.6
+      },
+      {
+        "date": "2025-12-24",
+        "value": 90.3
+      },
+      {
+        "date": "2025-12-25",
+        "value": 85.5
+      },
+      {
+        "date": "2025-12-26",
+        "value": 94.4
+      },
+      {
+        "date": "2025-12-27",
+        "value": 98.4
+      },
+      {
+        "date": "2025-12-28",
+        "value": 83.3
+      }
+    ],
+    "rating": "excellent"
+  },
+  "generated_at": "2025-12-30T18:12:51.040958"
+}

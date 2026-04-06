@@ -1,0 +1,53 @@
+{
+  "id": "broadway",
+  "name": "Broadway",
+  "order": 7,
+  "lat": 37.58726,
+  "lon": -122.362,
+  "image_prompt": "Isometric tree-lined street, tiny cafe with umbrellas, charming platform, spring flowers, pastel color scheme",
+  "metrics": {
+    "total_arrivals": 559,
+    "on_time_pct": 91.2,
+    "avg_delay": 1.5,
+    "max_delay": 46.9,
+    "status_breakdown": {
+      "on_time": 510,
+      "minor": 44,
+      "major": 5
+    },
+    "busiest_hour": 10,
+    "busiest_hour_name": "10:00 - 11:00",
+    "daily_trend": [
+      {
+        "date": "2025-12-13",
+        "value": 84.4
+      },
+      {
+        "date": "2025-12-14",
+        "value": 98.4
+      },
+      {
+        "date": "2025-12-20",
+        "value": 92.1
+      },
+      {
+        "date": "2025-12-21",
+        "value": 96.9
+      },
+      {
+        "date": "2025-12-25",
+        "value": 84.1
+      },
+      {
+        "date": "2025-12-27",
+        "value": 98.4
+      },
+      {
+        "date": "2025-12-28",
+        "value": 84.6
+      }
+    ],
+    "rating": "excellent"
+  },
+  "generated_at": "2025-12-30T18:12:50.990692"
+}

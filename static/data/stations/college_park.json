@@ -1,0 +1,53 @@
+{
+  "id": "college_park",
+  "name": "College Park",
+  "order": 24,
+  "lat": 37.34289,
+  "lon": -121.91565,
+  "image_prompt": "Isometric San Jose State tower, students with backpacks, SJSU colors, urban campus scene",
+  "metrics": {
+    "total_arrivals": 76,
+    "on_time_pct": 90.8,
+    "avg_delay": -0.3,
+    "max_delay": 12.0,
+    "status_breakdown": {
+      "on_time": 69,
+      "minor": 7,
+      "major": 0
+    },
+    "busiest_hour": 8,
+    "busiest_hour_name": "8:00 - 9:00",
+    "daily_trend": [
+      {
+        "date": "2025-12-17",
+        "value": 100.0
+      },
+      {
+        "date": "2025-12-18",
+        "value": 75.0
+      },
+      {
+        "date": "2025-12-19",
+        "value": 100.0
+      },
+      {
+        "date": "2025-12-22",
+        "value": 75.0
+      },
+      {
+        "date": "2025-12-23",
+        "value": 75.0
+      },
+      {
+        "date": "2025-12-24",
+        "value": 100.0
+      },
+      {
+        "date": "2025-12-26",
+        "value": 75.0
+      }
+    ],
+    "rating": "excellent"
+  },
+  "generated_at": "2025-12-30T18:12:51.123782"
+}

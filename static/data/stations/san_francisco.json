@@ -1,0 +1,53 @@
+{
+  "id": "san_francisco",
+  "name": "San Francisco",
+  "order": 1,
+  "lat": 37.776404,
+  "lon": -122.394911,
+  "image_prompt": "Isometric cartoon train station with tiny Caltrain, San Francisco skyline with Transamerica Pyramid and Salesforce Tower, miniature commuters, pastel colors, whimsical Silicon Valley TV style",
+  "metrics": {
+    "total_arrivals": 1179,
+    "on_time_pct": 100.0,
+    "avg_delay": -41.7,
+    "max_delay": 0.0,
+    "status_breakdown": {
+      "on_time": 1179,
+      "minor": 0,
+      "major": 0
+    },
+    "busiest_hour": 8,
+    "busiest_hour_name": "8:00 - 9:00",
+    "daily_trend": [
+      {
+        "date": "2025-12-22",
+        "value": 100.0
+      },
+      {
+        "date": "2025-12-23",
+        "value": 100.0
+      },
+      {
+        "date": "2025-12-24",
+        "value": 100.0
+      },
+      {
+        "date": "2025-12-25",
+        "value": 100.0
+      },
+      {
+        "date": "2025-12-26",
+        "value": 100.0
+      },
+      {
+        "date": "2025-12-27",
+        "value": 100.0
+      },
+      {
+        "date": "2025-12-28",
+        "value": 100.0
+      }
+    ],
+    "rating": "excellent"
+  },
+  "generated_at": "2025-12-30T18:12:50.930979"
+}
