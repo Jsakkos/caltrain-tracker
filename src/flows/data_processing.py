@@ -898,6 +898,267 @@ def generate_dashboard_data(processed_df: pd.DataFrame) -> Dict[str, str]:
     return outputs
 
 
+@task
+def detect_incidents(processed_df: pd.DataFrame, top_n: int = 25) -> Dict[str, Any]:
+    """
+    Detect delay incidents and build train trajectories for Marey diagrams.
+
+    Stage 1: Identify candidate incident dates from processed arrivals.
+    Stage 2: For each incident date, query raw GPS and project onto route.
+    Stage 3: Classify tiers and build trajectory JSON.
+
+    Args:
+        processed_df: Processed arrival data with delay_minutes column
+        top_n: Number of top incidents to keep
+
+    Returns:
+        dict with 'incidents' and 'trajectories' keys
+    """
+    import json as _json
+    from src.utils.geo_utils import load_shape_points, project_to_route
+
+    output_dir = os.path.join(STATIC_CONTENT_PATH, "data")
+    os.makedirs(output_dir, exist_ok=True)
+
+    if processed_df.empty or 'delay_minutes' not in processed_df.columns:
+        print("WARNING: No processed data available for incident detection")
+        # Write empty files
+        for fname in ["incidents.json", "incident_trajectories.json"]:
+            with open(os.path.join(output_dir, fname), "w") as f:
+                _json.dump([] if fname == "incidents.json" else {}, f)
+        return {"incidents": [], "trajectories": {}}
+
+    # Load station metadata for labeling
+    station_meta_path = os.path.join("data", "station_metadata.json")
+    with open(station_meta_path) as f:
+        station_meta = _json.load(f)["stations"]
+
+    # Load shape polyline for GPS projection
+    shape_points = load_shape_points("gtfs_data")
+    max_route_dist = shape_points[-1][2]
+
+    # Build station distance lookup
+    station_distances = []
+    for s in station_meta:
+        d = project_to_route(s["lat"], s["lon"], shape_points)
+        # Only include stations within the main route
+        if d < max_route_dist * 0.98 or s["order"] <= 26:
+            station_distances.append({
+                "name": s["name"],
+                "distance": round(d / 1000, 2),  # km
+                "order": s["order"],
+            })
+    station_distances.sort(key=lambda x: x["distance"])
+
+    # ── Stage 1: Find candidate incident dates ──
+    print("Stage 1: Scanning for delay incidents...")
+    df = processed_df.copy()
+    # Deduplicate to one record per trip-stop-date
+    df = df.drop_duplicates(subset=["trip_id", "stop_id", "date"])
+    print(f"  {len(df)} unique trip-stop-date arrivals")
+    df["date"] = pd.to_datetime(df["date"]).dt.date
+
+    # Find trains with major delays (>= 15 min)
+    major = df[df["delay_minutes"] >= 15].copy()
+    if major.empty:
+        print("No trains with delay >= 15 min found")
+        for fname in ["incidents.json", "incident_trajectories.json"]:
+            with open(os.path.join(output_dir, fname), "w") as f:
+                _json.dump([] if fname == "incidents.json" else {}, f)
+        return {"incidents": [], "trajectories": {}}
+
+    # Group by date
+    date_groups = major.groupby("date").agg(
+        trains_affected=("trip_id", "nunique"),
+        max_delay=("delay_minutes", "max"),
+        avg_delay=("delay_minutes", "mean"),
+    ).reset_index()
+
+    # Also compute overall on-time rate per date
+    daily_stats = df.groupby("date").agg(
+        total=("trip_id", "count"),
+        on_time=("delay_severity", lambda x: (x == "On Time").sum()),
+    ).reset_index()
+    daily_stats["on_time_pct"] = (daily_stats["on_time"] / daily_stats["total"] * 100).round(1)
+
+    date_groups = date_groups.merge(daily_stats[["date", "on_time_pct", "total"]], on="date", how="left")
+
+    # Classify tiers
+    date_groups["tier"] = date_groups["trains_affected"].apply(lambda x: 2 if x >= 3 else 1)
+
+    # Severity score
+    date_groups["severity_score"] = (
+        date_groups["avg_delay"] * date_groups["trains_affected"]
+    ).round(0).astype(int)
+
+    # Sort and take top N
+    date_groups = date_groups.sort_values("severity_score", ascending=False).head(top_n)
+
+    print(f"Found {len(date_groups)} incidents ({(date_groups['tier']==2).sum()} system, {(date_groups['tier']==1).sum()} train)")
+
+    # ── Stage 2: Build trajectories for incident dates ──
+    print("Stage 2: Building trajectories from raw GPS data...")
+    incident_dates = date_groups["date"].tolist()
+
+    # Query raw GPS for incident dates
+    conn = sqlite3.connect(SQLITE_DB_PATH)
+    incidents_list = []
+    trajectories_dict = {}
+
+    for idx, row in date_groups.iterrows():
+        inc_date = row["date"]
+        date_str = str(inc_date)
+
+        # Query raw GPS for this date
+        gps_df = pd.read_sql_query(
+            "SELECT trip_id, vehicle_lat, vehicle_lon, timestamp FROM train_locations "
+            "WHERE date(timestamp) = ?",
+            conn,
+            params=(date_str,),
+        )
+
+        if gps_df.empty:
+            print(f"  No GPS data for {date_str}, skipping")
+            continue
+
+        gps_df["timestamp"] = pd.to_datetime(gps_df["timestamp"], errors="coerce")
+        gps_df = gps_df.dropna(subset=["timestamp"])
+        gps_df["trip_id"] = gps_df["trip_id"].astype(str)
+
+        # Get the delayed trains for this date
+        delayed_trains = set(
+            major[major["date"] == inc_date]["trip_id"].astype(str).unique()
+        )
+
+        # Find root cause: earliest delayed train
+        date_major = major[major["date"] == inc_date].copy()
+        date_major["trip_id"] = date_major["trip_id"].astype(str)
+        if "arrival_datetime" in date_major.columns:
+            date_major["arrival_datetime"] = pd.to_datetime(date_major["arrival_datetime"], errors="coerce")
+            earliest = date_major.sort_values("arrival_datetime").iloc[0]
+        else:
+            earliest = date_major.sort_values("delay_minutes", ascending=False).iloc[0]
+
+        root_cause_train = str(earliest["trip_id"])
+        root_cause_station = earliest.get("stop_name", "Unknown")
+        if isinstance(root_cause_station, str):
+            root_cause_station = (root_cause_station
+                .replace(" Caltrain Station", "")
+                .replace(" Northbound", "")
+                .replace(" Southbound", ""))
+
+        # Build incident ID
+        if row["tier"] == 2:
+            inc_id = f"{date_str}-system"
+            summary = f"System Disruption — {row['trains_affected']} trains delayed"
+        else:
+            inc_id = f"{date_str}-train-{root_cause_train}"
+            summary = f"Train {root_cause_train} delayed {int(row['max_delay'])} min at {root_cause_station}"
+
+        # Project GPS points onto route for each train
+        train_trajectories = []
+        for trip_id, trip_gps in gps_df.groupby("trip_id"):
+            trip_gps = trip_gps.sort_values("timestamp")
+
+            # Skip trains with very few points
+            if len(trip_gps) < 3:
+                continue
+
+            points = []
+            for _, p in trip_gps.iterrows():
+                d = project_to_route(p["vehicle_lat"], p["vehicle_lon"], shape_points)
+                t = p["timestamp"].strftime("%H:%M:%S")
+                points.append({"time": t, "distance": round(d / 1000, 2)})
+
+            if not points:
+                continue
+
+            # Determine direction from distance trend
+            dists = [p["distance"] for p in points]
+            direction = "SB" if dists[-1] > dists[0] else "NB"
+
+            # Check if this train is anomalous
+            is_anomalous = str(trip_id) in delayed_trains
+
+            # Check for cascading: delayed but not the root cause
+            is_cascading = is_anomalous and str(trip_id) != root_cause_train
+
+            # Get max delay for this train
+            train_delays = date_major[date_major["trip_id"] == str(trip_id)]
+            max_delay = float(train_delays["delay_minutes"].max()) if not train_delays.empty else 0
+
+            # Downsample normal trains to every 5th point for smaller JSON
+            if not is_anomalous and len(points) > 10:
+                points = points[::5] + [points[-1]]
+
+            train_trajectories.append({
+                "trip_id": str(trip_id),
+                "direction": direction,
+                "points": points,
+                "is_anomalous": is_anomalous,
+                "is_cascading": is_cascading,
+                "max_delay_min": round(max_delay, 1),
+            })
+
+        if not train_trajectories:
+            print(f"  No valid trajectories for {date_str}, skipping")
+            continue
+
+        # Detect held station for root cause train
+        held_station = root_cause_station
+        for traj in train_trajectories:
+            if traj["trip_id"] == root_cause_train and len(traj["points"]) >= 5:
+                # Look for flat sections: 5+ points with < 0.3km movement
+                pts_d = [p["distance"] for p in traj["points"]]
+                for i in range(len(pts_d) - 4):
+                    window = pts_d[i:i+5]
+                    if max(window) - min(window) < 0.3:
+                        # Found a flat section — find nearest station
+                        center_dist = sum(window) / len(window)
+                        nearest = min(station_distances, key=lambda s: abs(s["distance"] - center_dist))
+                        if abs(nearest["distance"] - center_dist) < 0.5:
+                            held_station = nearest["name"]
+                        break
+
+        incidents_list.append({
+            "id": inc_id,
+            "date": date_str,
+            "tier": int(row["tier"]),
+            "summary": summary,
+            "trains_affected": int(row["trains_affected"]),
+            "max_delay_min": round(float(row["max_delay"]), 1),
+            "avg_delay_min": round(float(row["avg_delay"]), 1),
+            "on_time_pct": float(row["on_time_pct"]),
+            "severity_score": int(row["severity_score"]),
+            "root_cause_train": root_cause_train,
+            "root_cause_station": held_station,
+        })
+
+        trajectories_dict[inc_id] = {
+            "incident_id": inc_id,
+            "stations": station_distances,
+            "trajectories": train_trajectories,
+        }
+
+        print(f"  {inc_id}: {len(train_trajectories)} trains, tier {int(row['tier'])}")
+
+    conn.close()
+
+    # Sort incidents by severity
+    incidents_list.sort(key=lambda x: x["severity_score"], reverse=True)
+
+    # Write output files
+    with open(os.path.join(output_dir, "incidents.json"), "w") as f:
+        _json.dump(incidents_list, f, indent=2)
+    print(f"Generated incidents.json ({len(incidents_list)} incidents)")
+
+    with open(os.path.join(output_dir, "incident_trajectories.json"), "w") as f:
+        _json.dump(trajectories_dict, f)
+    print(f"Generated incident_trajectories.json ({len(trajectories_dict)} incident details)")
+
+    return {"incidents": incidents_list, "trajectories": trajectories_dict}
+
+
 @flow(name="Process Train Data and Generate Visualizations",log_prints=True)
 def process_data_flow():
     """
@@ -978,11 +1239,15 @@ def process_data_flow():
     # Generate rich dashboard data files
     dashboard_outputs = generate_dashboard_data(processed_df)
 
+    # Detect incidents and build Marey diagram data
+    incident_data = detect_incidents(processed_df)
+
     print("Train data processing flow completed successfully")
     return {
         'plots': [daily_stats_plot, commute_delay_plot],
         'summary': summary_stats,
-        'dashboard_data': dashboard_outputs
+        'dashboard_data': dashboard_outputs,
+        'incident_data': incident_data
     }
 
 if __name__ == "__main__":
