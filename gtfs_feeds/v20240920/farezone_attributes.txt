@@ -1,0 +1,7 @@
+zone_id,zone_name
+75298,Zone 1-SF to San Bruno
+75299,Zone 2-Millbrae to Redwood City
+75297,Zone 3-Menlo Park to Sunnyvale
+75300,Zone 4-Lawrence to Tamien
+75301,Zone 5-Capitol & Blossom Hill
+75302,Zone 6-Morgan Hill to Gilroy

@@ -5,7 +5,7 @@ South County,1,South
 South County,0,North
 Local Weekday,0,North
 Local Weekday,1,South
-Local Weekend,1,South
 Local Weekend,0,North
+Local Weekend,1,South
 Express,1,South
 Express,0,North
