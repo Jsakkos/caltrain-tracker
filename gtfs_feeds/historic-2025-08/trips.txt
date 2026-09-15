@@ -1,0 +1,357 @@
+route_id,service_id,trip_id,trip_headsign,trip_short_name,direction_id,block_id,shape_id,wheelchair_accessible,bikes_allowed
+Limited,425:20250831,425:20250831,San Francisco,425,0,,,1,1
+Local Weekday,144:20250831,144:20250831,San Jose Diridon,144,1,,,1,1
+Local Weekday,166:20250831,166:20250831,San Jose Diridon,166,1,,,1,1
+Local Weekend,612:20250831,612:20250831,San Jose Diridon,612,1,,,1,1
+Limited,401:20250831,401:20250831,San Francisco,401,0,,,1,1
+Limited,404:20250831,404:20250831,San Jose Diridon,404,1,,,1,1
+Local Weekday,162:20250831,162:20250831,San Jose Diridon,162,1,,,1,1
+Local Weekday,117:20250831,117:20250831,San Francisco,117,0,,,1,1
+Local Weekday,129:20250831,129:20250831,San Francisco,129,0,,,1,1
+Local Weekday,154:20250831,154:20250831,San Jose Diridon,154,1,,,1,1
+Local Weekend,602:20250831,602:20250831,San Jose Diridon,602,1,,,1,1
+Limited,417:20250831,417:20250831,San Francisco,417,0,,,1,1
+Local Weekday,150:20250831,150:20250831,San Jose Diridon,150,1,,,1,1
+Local Weekday,168:20250831,168:20250831,San Jose Diridon,168,1,,,1,1
+Local Weekday,107:20250831,107:20250831,San Francisco,107,0,,,1,1
+Local Weekday,119:20250831,119:20250831,San Francisco,119,0,,,1,1
+Express,515:20250831,515:20250831,San Francisco,515,0,,,1,1
+Local Weekday,165:20250831,165:20250831,San Francisco,165,0,,,1,1
+Express,511:20250831,511:20250831,San Francisco,511,0,,,1,1
+Local Weekday,160:20250831,160:20250831,San Jose Diridon,160,1,,,1,1
+Local Weekend,608:20250831,608:20250831,San Jose Diridon,608,1,,,1,1
+Local Weekend,656:20250831,656:20250831,San Jose Diridon,656,1,,,1,1
+Local Weekend,611:20250831,611:20250831,San Francisco,611,0,,,1,1
+Limited,412:20250831,412:20250831,San Jose Diridon,412,1,,,1,1
+Local Weekday,126:20250831,126:20250831,San Jose Diridon,126,1,,,1,1
+Express,526:20250831,526:20250831,San Jose Diridon,526,1,,,1,1
+Local Weekday,128:20250831,128:20250831,San Jose Diridon,128,1,,,1,1
+Local Weekend,658:20250831,658:20250831,San Jose Diridon,658,1,,,1,1
+Local Weekend,635:20250831,635:20250831,San Francisco,635,0,,,1,1
+Local Weekday,161:20250831,161:20250831,San Francisco,161,0,,,1,1
+Local Weekend,605:20250831,605:20250831,San Francisco,605,0,,,1,1
+Local Weekday,118:20250831,118:20250831,San Jose Diridon,118,1,,,1,1
+Local Weekend,652:20250831,652:20250831,San Jose Diridon,652,1,,,1,1
+Express,519:20250831,519:20250831,San Francisco,519,0,,,1,1
+Local Weekday,152:20250831,152:20250831,San Jose Diridon,152,1,,,1,1
+Local Weekday,145:20250831,145:20250831,San Francisco,145,0,,,1,1
+Local Weekend,604:20250831,604:20250831,San Jose Diridon,604,1,,,1,1
+Local Weekend,664:20250831,664:20250831,San Jose Diridon,664,1,,,1,1
+Local Weekday,116:20250831,116:20250831,San Jose Diridon,116,1,,,1,1
+Express,514:20250831,514:20250831,San Jose Diridon,514,1,,,1,1
+Local Weekday,163:20250831,163:20250831,San Francisco,163,0,,,1,1
+Local Weekday,143:20250831,143:20250831,San Francisco,143,0,,,1,1
+Local Weekend,601:20250831,601:20250831,San Francisco,601,0,,,1,1
+South County,811:20250831,811:20250831,San Jose Diridon,811,0,,,1,1
+Local Weekend,640:20250831,640:20250831,San Jose Diridon,640,1,,,1,1
+Express,502:20250831,502:20250831,San Jose Diridon,502,1,,,1,1
+Local Weekday,125:20250831,125:20250831,San Francisco,125,0,,,1,1
+Local Weekend,607:20250831,607:20250831,San Francisco,607,0,,,1,1
+Local Weekend,655:20250831,655:20250831,San Francisco,655,0,,,1,1
+Local Weekend,642:20250831,642:20250831,San Jose Diridon,642,1,,,1,1
+Local Weekday,121:20250831,121:20250831,San Francisco,121,0,,,1,1
+Local Weekday,173:20250831,173:20250831,San Francisco,173,0,,,1,1
+South County,814:20250831,814:20250831,Gilroy,814,1,,,1,1
+Local Weekend,634:20250831,634:20250831,San Jose Diridon,634,1,,,1,1
+Limited,409:20250831,409:20250831,San Francisco,409,0,,,1,1
+Local Weekday,153:20250831,153:20250831,San Francisco,153,0,,,1,1
+Local Weekday,174:20250831,174:20250831,San Jose Diridon,174,1,,,1,1
+Local Weekend,623:20250831,623:20250831,San Francisco,623,0,,,1,1
+Local Weekday,115:20250831,115:20250831,San Francisco,115,0,,,1,1
+Local Weekend,645:20250831,645:20250831,San Francisco,645,0,,,1,1
+Local Weekend,646:20250831,646:20250831,San Jose Diridon,646,1,,,1,1
+Local Weekend,650:20250831,650:20250831,San Jose Diridon,650,1,,,1,1
+South County,816:20250831,816:20250831,Gilroy,816,1,,,1,1
+Local Weekday,169:20250831,169:20250831,San Francisco,169,0,,,1,1
+Local Weekday,171:20250831,171:20250831,San Francisco,171,0,,,1,1
+Local Weekend,603:20250831,603:20250831,San Francisco,603,0,,,1,1
+Express,527:20250831,527:20250831,San Francisco,527,0,,,1,1
+Local Weekday,111:20250831,111:20250831,San Francisco,111,0,,,1,1
+Limited,421:20250831,421:20250831,San Francisco,421,0,,,1,1
+Local Weekday,108:20250831,108:20250831,Tamien,108,1,,,1,1
+Local Weekday,146:20250831,146:20250831,San Jose Diridon,146,1,,,1,1
+Local Weekday,142:20250831,142:20250831,San Jose Diridon,142,1,,,1,1
+Local Weekday,135:20250831,135:20250831,San Francisco,135,0,,,1,1
+Local Weekend,639:20250831,639:20250831,San Francisco,639,0,,,1,1
+Local Weekend,614:20250831,614:20250831,San Jose Diridon,614,1,,,1,1
+Local Weekend,636:20250831,636:20250831,San Jose Diridon,636,1,,,1,1
+Local Weekend,660:20250831,660:20250831,San Jose Diridon,660,1,,,1,1
+Limited,424:20250831,424:20250831,San Jose Diridon,424,1,,,1,1
+Local Weekday,164:20250831,164:20250831,San Jose Diridon,164,1,,,1,1
+Local Weekend,624:20250831,624:20250831,San Jose Diridon,624,1,,,1,1
+Local Weekday,159:20250831,159:20250831,San Francisco,159,0,,,1,1
+Local Weekday,139:20250831,139:20250831,San Francisco,139,0,,,1,1
+Express,510:20250831,510:20250831,San Jose Diridon,510,1,,,1,1
+Local Weekday,127:20250831,127:20250831,San Francisco,127,0,,,1,1
+Limited,420:20250831,420:20250831,San Jose Diridon,420,1,,,1,1
+Local Weekday,147:20250831,147:20250831,San Francisco,147,0,,,1,1
+Local Weekday,151:20250831,151:20250831,San Francisco,151,0,,,1,1
+Local Weekend,619:20250831,619:20250831,San Francisco,619,0,,,1,1
+Local Weekend,616:20250831,616:20250831,San Jose Diridon,616,1,,,1,1
+Local Weekend,625:20250831,625:20250831,San Francisco,625,0,,,1,1
+Local Weekend,628:20250831,628:20250831,San Jose Diridon,628,1,,,1,1
+Local Weekend,609:20250831,609:20250831,San Francisco,609,0,,,1,1
+Local Weekend,613:20250831,613:20250831,San Francisco,613,0,,,1,1
+Local Weekend,627:20250831,627:20250831,San Francisco,627,0,,,1,1
+Local Weekend,653:20250831,653:20250831,San Francisco,653,0,,,1,1
+South County,805:20250831,805:20250831,San Jose Diridon,805,0,,,1,1
+Local Weekday,148:20250831,148:20250831,San Jose Diridon,148,1,,,1,1
+Express,522:20250831,522:20250831,San Jose Diridon,522,1,,,1,1
+Express,523:20250831,523:20250831,San Francisco,523,0,,,1,1
+Limited,416:20250831,416:20250831,San Jose Diridon,416,1,,,1,1
+South County,822:20250831,822:20250831,Gilroy,822,1,,,1,1
+Local Weekday,134:20250831,134:20250831,San Jose Diridon,134,1,,,1,1
+Local Weekday,138:20250831,138:20250831,San Jose Diridon,138,1,,,1,1
+Local Weekend,621:20250831,621:20250831,San Francisco,621,0,,,1,1
+Local Weekend,649:20250831,649:20250831,San Francisco,649,0,,,1,1
+South County,807:20250831,807:20250831,San Jose Diridon,807,0,,,1,1
+Local Weekday,133:20250831,133:20250831,San Francisco,133,0,,,1,1
+Local Weekend,637:20250831,637:20250831,San Francisco,637,0,,,1,1
+Local Weekend,641:20250831,641:20250831,San Francisco,641,0,,,1,1
+Local Weekday,170:20250831,170:20250831,San Jose Diridon,170,1,,,1,1
+Local Weekend,606:20250831,606:20250831,San Jose Diridon,606,1,,,1,1
+Local Weekend,632:20250831,632:20250831,San Jose Diridon,632,1,,,1,1
+Local Weekend,654:20250831,654:20250831,San Jose Diridon,654,1,,,1,1
+Local Weekday,102:20250831,102:20250831,San Jose Diridon,102,1,,,1,1
+Local Weekday,167:20250831,167:20250831,San Francisco,167,0,,,1,1
+Local Weekday,114:20250831,114:20250831,San Jose Diridon,114,1,,,1,1
+Local Weekend,663:20250831,663:20250831,San Francisco,663,0,,,1,1
+Local Weekend,610:20250831,610:20250831,San Jose Diridon,610,1,,,1,1
+Local Weekday,113:20250831,113:20250831,San Francisco,113,0,,,1,1
+Local Weekday,156:20250831,156:20250831,San Jose Diridon,156,1,,,1,1
+Local Weekday,123:20250831,123:20250831,San Francisco,123,0,,,1,1
+Local Weekend,618:20250831,618:20250831,San Jose Diridon,618,1,,,1,1
+Local Weekday,110:20250831,110:20250831,San Jose Diridon,110,1,,,1,1
+Local Weekday,112:20250831,112:20250831,San Jose Diridon,112,1,,,1,1
+Local Weekday,149:20250831,149:20250831,San Francisco,149,0,,,1,1
+Local Weekend,651:20250831,651:20250831,San Francisco,651,0,,,1,1
+Local Weekday,141:20250831,141:20250831,San Francisco,141,0,,,1,1
+Local Weekend,644:20250831,644:20250831,San Jose Diridon,644,1,,,1,1
+Express,503:20250831,503:20250831,San Francisco,503,0,,,1,1
+Local Weekday,132:20250831,132:20250831,San Jose Diridon,132,1,,,1,1
+Local Weekday,158:20250831,158:20250831,San Jose Diridon,158,1,,,1,1
+Local Weekend,662:20250831,662:20250831,San Jose Diridon,662,1,,,1,1
+Limited,429:20250831,429:20250831,San Francisco,429,0,,,1,1
+Local Weekday,103:20250831,103:20250831,San Francisco,103,0,,,1,1
+Local Weekday,137:20250831,137:20250831,San Francisco,137,0,,,1,1
+Local Weekend,620:20250831,620:20250831,San Jose Diridon,620,1,,,1,1
+Limited,428:20250831,428:20250831,San Jose Diridon,428,1,,,1,1
+South County,809:20250831,809:20250831,San Jose Diridon,809,0,,,1,1
+Local Weekend,626:20250831,626:20250831,San Jose Diridon,626,1,,,1,1
+Local Weekday,176:20250831,176:20250831,San Jose Diridon,176,1,,,1,1
+Local Weekday,109:20250831,109:20250831,San Francisco,109,0,,,1,1
+Express,506:20250831,506:20250831,San Jose Diridon,506,1,,,1,1
+Local Weekday,155:20250831,155:20250831,San Francisco,155,0,,,1,1
+Local Weekend,647:20250831,647:20250831,San Francisco,647,0,,,1,1
+Local Weekday,130:20250831,130:20250831,San Jose Diridon,130,1,,,1,1
+Local Weekday,101:20250831,101:20250831,San Francisco,101,0,,,1,1
+Local Weekday,104:20250831,104:20250831,San Jose Diridon,104,1,,,1,1
+Limited,413:20250831,413:20250831,San Francisco,413,0,,,1,1
+Local Weekend,630:20250831,630:20250831,San Jose Diridon,630,1,,,1,1
+Local Weekday,106:20250831,106:20250831,San Jose Diridon,106,1,,,1,1
+Local Weekday,131:20250831,131:20250831,San Francisco,131,0,,,1,1
+Local Weekend,629:20250831,629:20250831,San Francisco,629,0,,,1,1
+Local Weekend,657:20250831,657:20250831,San Francisco,657,0,,,1,1
+Local Weekday,157:20250831,157:20250831,San Francisco,157,0,,,1,1
+Local Weekend,615:20250831,615:20250831,San Francisco,615,0,,,1,1
+Local Weekend,668:20250831,668:20250831,San Jose Diridon,668,1,,,1,1
+Limited,405:20250831,405:20250831,San Francisco,405,0,,,1,1
+Local Weekday,105:20250831,105:20250831,San Francisco,105,0,,,1,1
+Local Weekend,617:20250831,617:20250831,San Francisco,617,0,,,1,1
+Limited,408:20250831,408:20250831,San Jose Diridon,408,1,,,1,1
+Local Weekday,140:20250831,140:20250831,Tamien,140,1,,,1,1
+Local Weekend,643:20250831,643:20250831,San Francisco,643,0,,,1,1
+Local Weekend,661:20250831,661:20250831,San Francisco,661,0,,,1,1
+Express,518:20250831,518:20250831,San Jose Diridon,518,1,,,1,1
+Local Weekday,172:20250831,172:20250831,San Jose Diridon,172,1,,,1,1
+Local Weekend,622:20250831,622:20250831,San Jose Diridon,622,1,,,1,1
+Local Weekend,638:20250831,638:20250831,San Jose Diridon,638,1,,,1,1
+Local Weekend,665:20250831,665:20250831,San Francisco,665,0,,,1,1
+Local Weekend,648:20250831,648:20250831,San Jose Diridon,648,1,,,1,1
+South County,820:20250831,820:20250831,Gilroy,820,1,,,1,1
+Express,507:20250831,507:20250831,San Francisco,507,0,,,1,1
+Local Weekday,136:20250831,136:20250831,San Jose Diridon,136,1,,,1,1
+Local Weekend,631:20250831,631:20250831,San Francisco,631,0,,,1,1
+Local Weekday,120:20250831,120:20250831,San Jose Diridon,120,1,,,1,1
+Local Weekday,122:20250831,122:20250831,San Jose Diridon,122,1,,,1,1
+Local Weekend,659:20250831,659:20250831,San Francisco,659,0,,,1,1
+Local Weekday,124:20250831,124:20250831,San Jose Diridon,124,1,,,1,1
+Local Weekend,633:20250831,633:20250831,San Francisco,633,0,,,1,1
+South County,820:20250820,820:20250820,Gilroy,820,1,,,1,1
+Local Weekday,154:20250820,154:20250820,San Jose Diridon,154,1,,,1,1
+Local Weekday,125:20250820,125:20250820,San Francisco,125,0,,,1,1
+Local Weekend,608:20250820,608:20250820,San Jose Diridon,608,1,,,1,1
+Local Weekend,616:20250820,616:20250820,San Jose Diridon,616,1,,,1,1
+Local Weekend,639:20250820,639:20250820,San Francisco,639,0,,,1,1
+Local Weekday,166:20250820,166:20250820,San Jose Diridon,166,1,,,1,1
+Local Weekend,634:20250820,634:20250820,San Jose Diridon,634,1,,,1,1
+Local Weekend,603:20250820,603:20250820,San Francisco,603,0,,,1,1
+Local Weekday,176:20250820,176:20250820,San Jose Diridon,176,1,,,1,1
+Local Weekend,630:20250820,630:20250820,San Jose Diridon,630,1,,,1,1
+Local Weekend,645:20250820,645:20250820,San Francisco,645,0,,,1,1
+Local Weekend,653:20250820,653:20250820,San Francisco,653,0,,,1,1
+Limited,421:20250820,421:20250820,San Francisco,421,0,,,1,1
+Local Weekday,159:20250820,159:20250820,San Francisco,159,0,,,1,1
+Local Weekday,167:20250820,167:20250820,San Francisco,167,0,,,1,1
+Local Weekend,604:20250820,604:20250820,San Jose Diridon,604,1,,,1,1
+Local Weekday,108:20250820,108:20250820,Tamien,108,1,,,1,1
+Local Weekday,139:20250820,139:20250820,San Francisco,139,0,,,1,1
+Local Weekend,612:20250820,612:20250820,San Jose Diridon,612,1,,,1,1
+Express,507:20250820,507:20250820,San Francisco,507,0,,,1,1
+Limited,428:20250820,428:20250820,San Jose Diridon,428,1,,,1,1
+Local Weekday,104:20250820,104:20250820,San Jose Diridon,104,1,,,1,1
+Local Weekday,129:20250820,129:20250820,San Francisco,129,0,,,1,1
+Local Weekend,614:20250820,614:20250820,San Jose Diridon,614,1,,,1,1
+Local Weekend,627:20250820,627:20250820,San Francisco,627,0,,,1,1
+Express,522:20250820,522:20250820,San Jose Diridon,522,1,,,1,1
+Local Weekday,146:20250820,146:20250820,San Jose Diridon,146,1,,,1,1
+Local Weekend,637:20250820,637:20250820,San Francisco,637,0,,,1,1
+Local Weekend,647:20250820,647:20250820,San Francisco,647,0,,,1,1
+Local Weekday,110:20250820,110:20250820,San Jose Diridon,110,1,,,1,1
+Local Weekday,130:20250820,130:20250820,San Jose Diridon,130,1,,,1,1
+Local Weekday,133:20250820,133:20250820,San Francisco,133,0,,,1,1
+Local Weekend,622:20250820,622:20250820,San Jose Diridon,622,1,,,1,1
+Local Weekend,636:20250820,636:20250820,San Jose Diridon,636,1,,,1,1
+Local Weekend,613:20250820,613:20250820,San Francisco,613,0,,,1,1
+Express,526:20250820,526:20250820,San Jose Diridon,526,1,,,1,1
+South County,814:20250820,814:20250820,Gilroy,814,1,,,1,1
+Local Weekend,633:20250820,633:20250820,San Francisco,633,0,,,1,1
+Local Weekday,134:20250820,134:20250820,San Jose Diridon,134,1,,,1,1
+Express,515:20250820,515:20250820,San Francisco,515,0,,,1,1
+Local Weekday,124:20250820,124:20250820,San Jose Diridon,124,1,,,1,1
+Local Weekend,664:20250820,664:20250820,San Jose Diridon,664,1,,,1,1
+Local Weekend,632:20250820,632:20250820,San Jose Diridon,632,1,,,1,1
+Express,511:20250820,511:20250820,San Francisco,511,0,,,1,1
+Local Weekday,101:20250820,101:20250820,San Francisco,101,0,,,1,1
+Local Weekend,662:20250820,662:20250820,San Jose Diridon,662,1,,,1,1
+Local Weekend,657:20250820,657:20250820,San Francisco,657,0,,,1,1
+Local Weekend,631:20250820,631:20250820,San Francisco,631,0,,,1,1
+Express,502:20250820,502:20250820,San Jose Diridon,502,1,,,1,1
+Limited,412:20250820,412:20250820,San Jose Diridon,412,1,,,1,1
+South County,807:20250820,807:20250820,San Jose Diridon,807,0,,,1,1
+Local Weekday,112:20250820,112:20250820,San Jose Diridon,112,1,,,1,1
+Local Weekend,648:20250820,648:20250820,San Jose Diridon,648,1,,,1,1
+Local Weekday,137:20250820,137:20250820,San Francisco,137,0,,,1,1
+Limited,408:20250820,408:20250820,San Jose Diridon,408,1,,,1,1
+Local Weekday,160:20250820,160:20250820,San Jose Diridon,160,1,,,1,1
+Local Weekend,625:20250820,625:20250820,San Francisco,625,0,,,1,1
+Express,506:20250820,506:20250820,San Jose Diridon,506,1,,,1,1
+South County,816:20250820,816:20250820,Gilroy,816,1,,,1,1
+Local Weekday,144:20250820,144:20250820,San Jose Diridon,144,1,,,1,1
+Local Weekend,609:20250820,609:20250820,San Francisco,609,0,,,1,1
+Local Weekday,142:20250820,142:20250820,San Jose Diridon,142,1,,,1,1
+Local Weekday,152:20250820,152:20250820,San Jose Diridon,152,1,,,1,1
+Limited,416:20250820,416:20250820,San Jose Diridon,416,1,,,1,1
+Local Weekday,148:20250820,148:20250820,San Jose Diridon,148,1,,,1,1
+Local Weekday,163:20250820,163:20250820,San Francisco,163,0,,,1,1
+Local Weekday,173:20250820,173:20250820,San Francisco,173,0,,,1,1
+Local Weekend,628:20250820,628:20250820,San Jose Diridon,628,1,,,1,1
+Local Weekend,661:20250820,661:20250820,San Francisco,661,0,,,1,1
+Local Weekday,138:20250820,138:20250820,San Jose Diridon,138,1,,,1,1
+Local Weekday,174:20250820,174:20250820,San Jose Diridon,174,1,,,1,1
+Express,503:20250820,503:20250820,San Francisco,503,0,,,1,1
+Express,527:20250820,527:20250820,San Francisco,527,0,,,1,1
+Limited,425:20250820,425:20250820,San Francisco,425,0,,,1,1
+Local Weekend,658:20250820,658:20250820,San Jose Diridon,658,1,,,1,1
+Local Weekday,170:20250820,170:20250820,San Jose Diridon,170,1,,,1,1
+Local Weekday,117:20250820,117:20250820,San Francisco,117,0,,,1,1
+Local Weekday,143:20250820,143:20250820,San Francisco,143,0,,,1,1
+Local Weekend,621:20250820,621:20250820,San Francisco,621,0,,,1,1
+Local Weekday,128:20250820,128:20250820,San Jose Diridon,128,1,,,1,1
+Local Weekday,168:20250820,168:20250820,San Jose Diridon,168,1,,,1,1
+Local Weekend,652:20250820,652:20250820,San Jose Diridon,652,1,,,1,1
+Local Weekend,605:20250820,605:20250820,San Francisco,605,0,,,1,1
+Local Weekend,607:20250820,607:20250820,San Francisco,607,0,,,1,1
+Limited,409:20250820,409:20250820,San Francisco,409,0,,,1,1
+Local Weekday,169:20250820,169:20250820,San Francisco,169,0,,,1,1
+Express,510:20250820,510:20250820,San Jose Diridon,510,1,,,1,1
+Local Weekday,115:20250820,115:20250820,San Francisco,115,0,,,1,1
+Local Weekend,643:20250820,643:20250820,San Francisco,643,0,,,1,1
+Local Weekend,665:20250820,665:20250820,San Francisco,665,0,,,1,1
+Local Weekday,113:20250820,113:20250820,San Francisco,113,0,,,1,1
+Local Weekday,165:20250820,165:20250820,San Francisco,165,0,,,1,1
+Local Weekend,602:20250820,602:20250820,San Jose Diridon,602,1,,,1,1
+Local Weekend,650:20250820,650:20250820,San Jose Diridon,650,1,,,1,1
+Local Weekday,121:20250820,121:20250820,San Francisco,121,0,,,1,1
+Local Weekday,135:20250820,135:20250820,San Francisco,135,0,,,1,1
+Local Weekday,171:20250820,171:20250820,San Francisco,171,0,,,1,1
+Local Weekend,617:20250820,617:20250820,San Francisco,617,0,,,1,1
+Express,514:20250820,514:20250820,San Jose Diridon,514,1,,,1,1
+Local Weekday,147:20250820,147:20250820,San Francisco,147,0,,,1,1
+Local Weekend,624:20250820,624:20250820,San Jose Diridon,624,1,,,1,1
+Local Weekend,638:20250820,638:20250820,San Jose Diridon,638,1,,,1,1
+Local Weekend,618:20250820,618:20250820,San Jose Diridon,618,1,,,1,1
+Local Weekend,629:20250820,629:20250820,San Francisco,629,0,,,1,1
+South County,809:20250820,809:20250820,San Jose Diridon,809,0,,,1,1
+Local Weekday,132:20250820,132:20250820,San Jose Diridon,132,1,,,1,1
+Local Weekday,141:20250820,141:20250820,San Francisco,141,0,,,1,1
+Limited,413:20250820,413:20250820,San Francisco,413,0,,,1,1
+Limited,404:20250820,404:20250820,San Jose Diridon,404,1,,,1,1
+Local Weekend,626:20250820,626:20250820,San Jose Diridon,626,1,,,1,1
+Local Weekend,651:20250820,651:20250820,San Francisco,651,0,,,1,1
+Local Weekday,107:20250820,107:20250820,San Francisco,107,0,,,1,1
+Local Weekday,156:20250820,156:20250820,San Jose Diridon,156,1,,,1,1
+Local Weekend,606:20250820,606:20250820,San Jose Diridon,606,1,,,1,1
+Limited,405:20250820,405:20250820,San Francisco,405,0,,,1,1
+Local Weekday,109:20250820,109:20250820,San Francisco,109,0,,,1,1
+Local Weekend,635:20250820,635:20250820,San Francisco,635,0,,,1,1
+Local Weekend,610:20250820,610:20250820,San Jose Diridon,610,1,,,1,1
+Local Weekend,601:20250820,601:20250820,San Francisco,601,0,,,1,1
+Local Weekday,161:20250820,161:20250820,San Francisco,161,0,,,1,1
+Local Weekday,102:20250820,102:20250820,San Jose Diridon,102,1,,,1,1
+Local Weekend,642:20250820,642:20250820,San Jose Diridon,642,1,,,1,1
+Local Weekend,615:20250820,615:20250820,San Francisco,615,0,,,1,1
+Local Weekend,659:20250820,659:20250820,San Francisco,659,0,,,1,1
+South County,822:20250820,822:20250820,Gilroy,822,1,,,1,1
+Local Weekend,668:20250820,668:20250820,San Jose Diridon,668,1,,,1,1
+Local Weekday,140:20250820,140:20250820,Tamien,140,1,,,1,1
+Local Weekday,131:20250820,131:20250820,San Francisco,131,0,,,1,1
+Local Weekend,654:20250820,654:20250820,San Jose Diridon,654,1,,,1,1
+Local Weekend,663:20250820,663:20250820,San Francisco,663,0,,,1,1
+Local Weekday,155:20250820,155:20250820,San Francisco,155,0,,,1,1
+Limited,420:20250820,420:20250820,San Jose Diridon,420,1,,,1,1
+Local Weekday,105:20250820,105:20250820,San Francisco,105,0,,,1,1
+Local Weekday,106:20250820,106:20250820,San Jose Diridon,106,1,,,1,1
+Local Weekend,656:20250820,656:20250820,San Jose Diridon,656,1,,,1,1
+Local Weekday,116:20250820,116:20250820,San Jose Diridon,116,1,,,1,1
+Local Weekend,655:20250820,655:20250820,San Francisco,655,0,,,1,1
+Local Weekday,114:20250820,114:20250820,San Jose Diridon,114,1,,,1,1
+Local Weekday,136:20250820,136:20250820,San Jose Diridon,136,1,,,1,1
+Local Weekday,164:20250820,164:20250820,San Jose Diridon,164,1,,,1,1
+Local Weekday,123:20250820,123:20250820,San Francisco,123,0,,,1,1
+Local Weekday,150:20250820,150:20250820,San Jose Diridon,150,1,,,1,1
+Local Weekday,172:20250820,172:20250820,San Jose Diridon,172,1,,,1,1
+Local Weekend,644:20250820,644:20250820,San Jose Diridon,644,1,,,1,1
+Local Weekday,127:20250820,127:20250820,San Francisco,127,0,,,1,1
+Local Weekend,660:20250820,660:20250820,San Jose Diridon,660,1,,,1,1
+Express,523:20250820,523:20250820,San Francisco,523,0,,,1,1
+South County,811:20250820,811:20250820,San Jose Diridon,811,0,,,1,1
+Local Weekday,162:20250820,162:20250820,San Jose Diridon,162,1,,,1,1
+Local Weekday,119:20250820,119:20250820,San Francisco,119,0,,,1,1
+Local Weekend,623:20250820,623:20250820,San Francisco,623,0,,,1,1
+Local Weekend,641:20250820,641:20250820,San Francisco,641,0,,,1,1
+Local Weekend,611:20250820,611:20250820,San Francisco,611,0,,,1,1
+Local Weekend,649:20250820,649:20250820,San Francisco,649,0,,,1,1
+Local Weekday,103:20250820,103:20250820,San Francisco,103,0,,,1,1
+Limited,429:20250820,429:20250820,San Francisco,429,0,,,1,1
+South County,805:20250820,805:20250820,San Jose Diridon,805,0,,,1,1
+Local Weekday,157:20250820,157:20250820,San Francisco,157,0,,,1,1
+Local Weekday,149:20250820,149:20250820,San Francisco,149,0,,,1,1
+Local Weekday,153:20250820,153:20250820,San Francisco,153,0,,,1,1
+Express,519:20250820,519:20250820,San Francisco,519,0,,,1,1
+Limited,417:20250820,417:20250820,San Francisco,417,0,,,1,1
+Local Weekday,118:20250820,118:20250820,San Jose Diridon,118,1,,,1,1
+Local Weekday,122:20250820,122:20250820,San Jose Diridon,122,1,,,1,1
+Express,518:20250820,518:20250820,San Jose Diridon,518,1,,,1,1
+Limited,424:20250820,424:20250820,San Jose Diridon,424,1,,,1,1
+Local Weekday,158:20250820,158:20250820,San Jose Diridon,158,1,,,1,1
+Local Weekend,620:20250820,620:20250820,San Jose Diridon,620,1,,,1,1
+Local Weekday,145:20250820,145:20250820,San Francisco,145,0,,,1,1
+Local Weekend,640:20250820,640:20250820,San Jose Diridon,640,1,,,1,1
+Local Weekend,619:20250820,619:20250820,San Francisco,619,0,,,1,1
+Local Weekday,111:20250820,111:20250820,San Francisco,111,0,,,1,1
+Local Weekend,646:20250820,646:20250820,San Jose Diridon,646,1,,,1,1
+Local Weekday,120:20250820,120:20250820,San Jose Diridon,120,1,,,1,1
+Local Weekday,126:20250820,126:20250820,San Jose Diridon,126,1,,,1,1
+Local Weekday,151:20250820,151:20250820,San Francisco,151,0,,,1,1
+Limited,401:20250820,401:20250820,San Francisco,401,0,,,1,1
