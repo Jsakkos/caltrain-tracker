@@ -21,6 +21,7 @@ try:
     from src.config import SQLITE_DB_PATH, STATIC_CONTENT_PATH
     from src.utils.time_utils import calculate_time_difference, categorize_commute_time, normalize_time
     from src.utils.geo_utils import haversine
+    from src.data.gtfs_feeds import load_stops, schedule_for_dates
 except ImportError:
     # If running directly, set these variables manually
     BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
@@ -31,6 +32,7 @@ except ImportError:
     sys.path.append(os.path.join(BASE_DIR, 'src'))
     from utils.time_utils import calculate_time_difference, categorize_commute_time, normalize_time
     from utils.geo_utils import haversine
+    from data.gtfs_feeds import load_stops, schedule_for_dates
 
 # Define custom colors for each Status
 STATUS_COLORS = {
@@ -108,21 +110,27 @@ def load_raw_data() -> pd.DataFrame:
         conn.close()
 
 @task
-def load_gtfs_data() -> Tuple[pd.DataFrame, pd.DataFrame]:
+def load_gtfs_data(service_dates: List) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
-    Load GTFS static data (stops and stop times) from the database.
-    
+    Load GTFS stops and the stop times scheduled on each date, using the
+    schedule version that was in effect that day (see src/data/gtfs_feeds.py).
+
+    Args:
+        service_dates (List[date]): Dates to build the schedule for
+
     Returns:
-        Tuple[pd.DataFrame, pd.DataFrame]: Tuple of DataFrames (stops_df, stop_times_df)
+        Tuple[pd.DataFrame, pd.DataFrame]: (stops_df, stop_times_df); stop_times_df has a 'date' column
     """
-    # Load stops from CSV file like in rebuild_plots.py
-    stops_df = pd.read_csv(os.path.join('gtfs_data', 'stops.txt'))
+    stops_df = load_stops()
     stops_df = stops_df[stops_df['stop_id'].str.isnumeric()]
-    
-    # Load stop times from CSV file
-    stop_times_df = pd.read_csv(os.path.join('gtfs_data', 'stop_times.txt'))
-    
-    print(f"Loaded {len(stops_df)} stops and {len(stop_times_df)} stop times from CSV files")
+
+    stop_times_df = schedule_for_dates(service_dates)
+    uncovered = sorted(set(service_dates) - set(stop_times_df['date']))
+    if uncovered:
+        print(f"WARNING: No GTFS schedule covers {len(uncovered)} date(s), e.g. {uncovered[:5]}")
+
+    per_feed = stop_times_df.groupby('feed_version')['date'].nunique().to_dict()
+    print(f"Loaded {len(stops_df)} stops and {len(stop_times_df)} scheduled stop times; dates per schedule version: {per_feed}")
     return stops_df, stop_times_df
 
 @task
@@ -166,18 +174,16 @@ def process_arrival_data(raw_df: pd.DataFrame, stops_df: pd.DataFrame, stop_time
         stop_times_df['stop_id'] = stop_times_df['stop_id'].astype(str)
         stop_times_df['trip_id'] = stop_times_df['trip_id'].astype(str)
 
-    # Merge datasets
-    df2 = pd.merge(raw_df, stop_times_df[['trip_id', 'stop_id', 'arrival_time']], on=['trip_id', 'stop_id'])
+    # Merge datasets, matching each ping to the schedule in effect on its date
+    raw_df['timestamp'] = pd.to_datetime(raw_df['timestamp'])
+    raw_df['date'] = raw_df['timestamp'].dt.date
+    df2 = pd.merge(raw_df, stop_times_df[['date', 'trip_id', 'stop_id', 'arrival_time']], on=['date', 'trip_id', 'stop_id'])
     df2 = pd.merge(df2, stops_df[['stop_id', 'stop_name', 'parent_station', 'stop_lat', 'stop_lon']], on=['stop_id'])
 
     # Calculate distance between train and stop
     df2['distance'] = df2.apply(lambda row: haversine(
         row['vehicle_lat'], row['vehicle_lon'], row['stop_lat'], row['stop_lon']
     ), axis=1)
-    
-    # Convert timestamp
-    df2['timestamp'] = pd.to_datetime(df2['timestamp'])
-    df2['date'] = df2['timestamp'].dt.date
     
     # Normalize arrival times - keep as string for now
     df2['arrival_time'] = df2['arrival_time'].apply(normalize_time)
@@ -1193,11 +1199,12 @@ def process_data_flow():
     print(f"Raw data columns: {raw_df.columns.tolist()}")
     print(f"Raw data sample: {raw_df.head(1).to_dict('records')}")
     
-    # Load GTFS data
-    stops_df, stop_times_df = load_gtfs_data()
-    
+    # Load the schedule in effect on each date we have pings for
+    service_dates = sorted(raw_df['timestamp'].dt.date.unique())
+    stops_df, stop_times_df = load_gtfs_data(service_dates)
+
     if stops_df.empty or stop_times_df.empty:
-        print("ERROR: GTFS data is empty. Check the CSV files in gtfs_data directory.")
+        print("ERROR: GTFS data is empty. Check the feed folders in gtfs_feeds/ (see scripts/backfill_gtfs_history.py).")
         return {
             'error': 'GTFS data missing',
             'plots': [],

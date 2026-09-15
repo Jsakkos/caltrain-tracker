@@ -23,7 +23,11 @@ OVERRIDES = {
     "src/flows/data_processing.py:process_data_flow": {
         "work_pool_name": "my-pool",  # Use your work pool name
         "cron": "0 0 * * *",  # Daily
-    }
+    },
+    "src/flows/gtfs_update.py:update_gtfs_schedule_flow": {
+        "work_pool_name": "my-pool",
+        "cron": "30 23 * * *",  # Daily, ahead of midnight processing
+    },
 }
 
 # Maximum number of flows to deploy concurrently

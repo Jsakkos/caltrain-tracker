@@ -28,6 +28,7 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).parent.parent
 DB_PATH = PROJECT_ROOT / "data" / "caltrain_lat_long.db"
 GTFS_DIR = PROJECT_ROOT / "gtfs_data"
+GTFS_FEEDS_DIR = PROJECT_ROOT / "gtfs_feeds"
 NAS_BACKUP_ROOT = Path("/nfs/share/backups/caltrain")
 
 DAILY_DIR = NAS_BACKUP_ROOT / "daily"
@@ -93,16 +94,18 @@ def backup_sqlite(dest_path: Path) -> int:
 
 
 def backup_gtfs(dest_path: Path) -> int:
-    """Create a tar.gz archive of the GTFS data directory.
+    """Create a tar.gz archive of the current and versioned GTFS directories.
 
     Returns the compressed file size in bytes.
     """
-    if not GTFS_DIR.exists():
-        log.warning(f"GTFS directory not found: {GTFS_DIR}, skipping")
+    dirs = [d for d in (GTFS_DIR, GTFS_FEEDS_DIR) if d.exists()]
+    if not dirs:
+        log.warning(f"No GTFS directories found ({GTFS_DIR}, {GTFS_FEEDS_DIR}), skipping")
         return 0
 
     with tarfile.open(dest_path, "w:gz") as tar:
-        tar.add(GTFS_DIR, arcname="gtfs_data")
+        for d in dirs:
+            tar.add(d, arcname=d.name)
 
     size = dest_path.stat().st_size
     log.info(f"GTFS backup: {size / 1024 / 1024:.1f} MB -> {dest_path.name}")
