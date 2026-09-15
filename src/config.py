@@ -18,7 +18,12 @@ print(f"Dotenv file exists: {os.path.exists(dotenv_path)}")
 load_dotenv(dotenv_path)
 
 # API Configuration
-API_KEY = os.environ.get('API_KEY','afec7635-a79b-4ccb-b87b-5c8d9cf5b36c')
+API_KEY = os.environ.get('API_KEY')
+if not API_KEY:
+    raise RuntimeError(
+        "API_KEY environment variable is not set. "
+        "Copy .env.example to .env and add your 511.org API key."
+    )
 CALTRAIN_AGENCY_CODE = "CT"  # Caltrain operator ID
 GTFS_RT_URL = f"https://api.511.org/transit/VehicleMonitoring?api_key={API_KEY}&agency={CALTRAIN_AGENCY_CODE}"
 
