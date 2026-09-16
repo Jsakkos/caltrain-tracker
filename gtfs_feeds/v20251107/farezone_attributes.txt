@@ -1,0 +1,7 @@
+zone_id,zone_name
+79011,Zone 1-SF to San Bruno
+79012,Zone 2-Millbrae to Redwood City
+79010,Zone 3-Menlo Park to Sunnyvale
+79013,Zone 4-Lawrence to Tamien
+79014,Zone 5-Capitol & Blossom Hill
+79015,Zone 6-Morgan Hill to Gilroy

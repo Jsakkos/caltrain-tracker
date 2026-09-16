@@ -73,7 +73,8 @@ The application is built using the following technologies:
 ├── static/                  # Static content (plots, data files)
 │   ├── plots/               # Generated visualizations
 │   └── data/                # Generated data files
-├── gtfs_data/               # GTFS static feed data
+├── gtfs_data/               # Current GTFS static feed (refreshed daily)
+├── gtfs_feeds/              # Every GTFS schedule version, matched to arrivals by date
 ├── docker-compose.yaml      # Docker Compose configuration
 ├── Dockerfile               # Docker image definition
 ├── main.py                  # Application entry point
@@ -87,6 +88,21 @@ The application is built using the following technologies:
 All data was gathered from the 511.org transit API.
 
 The list of stops and stop times were downloaded from the GTFS API here: http://api.511.org/transit/datafeeds?api_key={API_KEY}&operator_id={OPERATOR}
+
+### Schedules
+
+Caltrain's timetable changes several times a year, so each arrival is compared against the schedule that was in effect on its date. Every schedule version is kept under `gtfs_feeds/`:
+
+- `v<feed_version>/`: feeds published on the datafeeds endpoint. The "Update GTFS Schedule" Prefect flow checks for a new version every night at 23:30, stores it, and refreshes `gtfs_data/` (run `python scripts/check_gtfs_updates.py` to do the same by hand).
+- `historic-YYYY-MM/`: the Caltrain rows of 511's monthly regional archive (`datafeeds?historic=YYYY-MM`), which lists the trips that actually ran on each day, holidays and mid-month changes included. These also keep 511's `stop_observations.txt` rows for Caltrain.
+
+`src/data/gtfs_feeds.py` picks the schedule for a date: a monthly archive if one covers it, otherwise the newest published timetable in effect. Archives appear a few days after each month ends; to add them:
+
+```
+python scripts/backfill_gtfs_history.py --start 2025-08
+```
+
+Each archive download is roughly 600 MB, and extraction takes a few minutes per month.
 
 Historical train position data was collected in every minute (per API restrictions) from the GTFS-RT Vehicle Monitoring API: https://api.511.org/transit/VehicleMonitoring?api_key={API_KEY}&agency={OPERATOR}
 

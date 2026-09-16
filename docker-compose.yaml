@@ -26,6 +26,8 @@ services:
       - ./src:/app/src
       - ./data:/app/data  # Mount data directory for SQLite database
       - ./static:/app/static  # Mount static directory for processed data output
+      - ./gtfs_data:/app/gtfs_data  # Current schedule, refreshed by the GTFS update flow
+      - ./gtfs_feeds:/app/gtfs_feeds  # Every schedule version, matched to arrivals by date
     environment:
       - PREFECT_UI_URL=http://${HOST}:4200/api
       - PREFECT_API_URL=http://${HOST}:4200/api

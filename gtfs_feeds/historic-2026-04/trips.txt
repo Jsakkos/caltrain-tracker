@@ -1,0 +1,258 @@
+route_id,service_id,trip_id,trip_headsign,trip_short_name,direction_id,block_id,shape_id,wheelchair_accessible,bikes_allowed
+Local Weekday,172:20260430,172:20260430,Tamien,172,1,,,1,1
+Local Weekend,656:20260430,656:20260430,San Jose Diridon,656,1,,,1,1
+South County,825:20260430,825:20260430,San Jose Diridon,825,0,,,1,1
+Local Weekday,M136:20260430,M136:20260430,Tamien,M136,1,,,1,1
+Local Weekday,176:20260430,176:20260430,Tamien,176,1,,,1,1
+Local Weekday,108:20260430,108:20260430,Tamien,108,1,,,1,1
+Local Weekday,119:20260430,119:20260430,San Francisco,119,0,,,1,1
+Local Weekday,M159:20260430,M159:20260430,San Francisco,M159,0,,,1,1
+Local Weekend,603:20260430,603:20260430,San Francisco,603,0,,,1,1
+Local Weekday,140:20260430,140:20260430,Tamien,140,1,,,1,1
+Local Weekday,142:20260430,142:20260430,San Jose Diridon,142,1,,,1,1
+Local Weekday,161:20260430,161:20260430,San Francisco,161,0,,,1,1
+Local Weekend,653:20260430,653:20260430,San Francisco,653,0,,,1,1
+Local Weekend,657:20260430,657:20260430,San Francisco,657,0,,,1,1
+Local Weekday,117:20260430,117:20260430,San Francisco,117,0,,,1,1
+Local Weekday,M121:20260430,M121:20260430,San Francisco,M121,0,,,1,1
+Local Weekday,M108:20260430,M108:20260430,Tamien,M108,1,,,1,1
+Local Weekday,103:20260430,103:20260430,San Francisco,103,0,,,1,1
+Local Weekend,619:20260430,619:20260430,San Francisco,619,0,,,1,1
+Local Weekend,642:20260430,642:20260430,Tamien,642,1,,,1,1
+Limited,429:20260430,429:20260430,San Francisco,429,0,,,1,1
+Limited,416:20260430,416:20260430,San Jose Diridon,416,1,,,1,1
+Local Weekday,M155:20260430,M155:20260430,San Francisco,M155,0,,,1,1
+Local Weekend,611:20260430,611:20260430,San Francisco,611,0,,,1,1
+Local Weekday,M129:20260430,M129:20260430,San Francisco,M129,0,,,1,1
+Local Weekday,171:20260430,171:20260430,San Francisco,171,0,,,1,1
+Local Weekend,624:20260430,624:20260430,San Jose Diridon,624,1,,,1,1
+Local Weekend,650:20260430,650:20260430,Tamien,650,1,,,1,1
+Local Weekend,609:20260430,609:20260430,San Francisco,609,0,,,1,1
+South County,840:20260430,840:20260430,Gilroy,840,1,,,1,1
+Local Weekday,M139:20260430,M139:20260430,San Francisco,M139,0,,,1,1
+Local Weekend,629:20260430,629:20260430,San Francisco,629,0,,,1,1
+Local Weekday,125:20260430,125:20260430,San Francisco,125,0,,,1,1
+Local Weekday,M137:20260430,M137:20260430,San Francisco,M137,0,,,1,1
+Local Weekday,M127:20260430,M127:20260430,San Francisco,M127,0,,,1,1
+Local Weekday,112:20260430,112:20260430,Tamien,112,1,,,1,1
+Local Weekday,M128:20260430,M128:20260430,Tamien,M128,1,,,1,1
+Local Weekday,138:20260430,138:20260430,San Jose Diridon,138,1,,,1,1
+Local Weekday,M171:20260430,M171:20260430,San Francisco,M171,0,,,1,1
+Express,515:20260430,515:20260430,San Francisco,515,0,,,1,1
+Limited,409:20260430,409:20260430,San Francisco,409,0,,,1,1
+Limited,424:20260430,424:20260430,San Jose Diridon,424,1,,,1,1
+Local Weekday,153:20260430,153:20260430,San Francisco,153,0,,,1,1
+Local Weekday,136:20260430,136:20260430,Tamien,136,1,,,1,1
+Local Weekday,139:20260430,139:20260430,San Francisco,139,0,,,1,1
+Local Weekend,636:20260430,636:20260430,San Jose Diridon,636,1,,,1,1
+Local Weekday,M157:20260430,M157:20260430,San Francisco,M157,0,,,1,1
+Local Weekday,144:20260430,144:20260430,Tamien,144,1,,,1,1
+Local Weekday,M102:20260430,M102:20260430,San Jose Diridon,M102,1,,,1,1
+Local Weekday,115:20260430,115:20260430,San Francisco,115,0,,,1,1
+Local Weekend,606:20260430,606:20260430,Tamien,606,1,,,1,1
+Express,506:20260430,506:20260430,San Jose Diridon,506,1,,,1,1
+Express,527:20260430,527:20260430,San Francisco,527,0,,,1,1
+Local Weekday,156:20260430,156:20260430,Tamien,156,1,,,1,1
+Local Weekday,M133:20260430,M133:20260430,San Francisco,M133,0,,,1,1
+Local Weekday,104:20260430,104:20260430,Tamien,104,1,,,1,1
+Local Weekday,148:20260430,148:20260430,Tamien,148,1,,,1,1
+Local Weekday,110:20260430,110:20260430,San Jose Diridon,110,1,,,1,1
+Local Weekend,651:20260430,651:20260430,San Francisco,651,0,,,1,1
+Local Weekday,M149:20260430,M149:20260430,San Francisco,M149,0,,,1,1
+Local Weekday,M104:20260430,M104:20260430,Tamien,M104,1,,,1,1
+Local Weekday,106:20260430,106:20260430,San Jose Diridon,106,1,,,1,1
+Local Weekday,160:20260430,160:20260430,Tamien,160,1,,,1,1
+Limited,413:20260430,413:20260430,San Francisco,413,0,,,1,1
+Local Weekday,170:20260430,170:20260430,San Jose Diridon,170,1,,,1,1
+Local Weekday,M151:20260430,M151:20260430,San Francisco,M151,0,,,1,1
+Local Weekend,604:20260430,604:20260430,San Jose Diridon,604,1,,,1,1
+Local Weekend,615:20260430,615:20260430,San Francisco,615,0,,,1,1
+Local Weekend,605:20260430,605:20260430,San Francisco,605,0,,,1,1
+Local Weekend,602:20260430,602:20260430,Tamien,602,1,,,1,1
+Local Weekend,618:20260430,618:20260430,Tamien,618,1,,,1,1
+Limited,425:20260430,425:20260430,San Francisco,425,0,,,1,1
+Local Weekday,120:20260430,120:20260430,Tamien,120,1,,,1,1
+Local Weekday,114:20260430,114:20260430,San Jose Diridon,114,1,,,1,1
+Local Weekday,M146:20260430,M146:20260430,San Jose Diridon,M146,1,,,1,1
+Express,526:20260430,526:20260430,San Jose Diridon,526,1,,,1,1
+Local Weekday,M107:20260430,M107:20260430,San Francisco,M107,0,,,1,1
+South County,807:20260430,807:20260430,San Jose Diridon,807,0,,,1,1
+Local Weekday,164:20260430,164:20260430,Tamien,164,1,,,1,1
+Local Weekday,M140:20260430,M140:20260430,Tamien,M140,1,,,1,1
+Local Weekday,M134:20260430,M134:20260430,San Jose Diridon,M134,1,,,1,1
+South County,820:20260430,820:20260430,Gilroy,820,1,,,1,1
+Local Weekday,M168:20260430,M168:20260430,Tamien,M168,1,,,1,1
+Local Weekday,122:20260430,122:20260430,San Jose Diridon,122,1,,,1,1
+Limited,421:20260430,421:20260430,San Francisco,421,0,,,1,1
+South County,816:20260430,816:20260430,Gilroy,816,1,,,1,1
+Local Weekday,M150:20260430,M150:20260430,San Jose Diridon,M150,1,,,1,1
+Local Weekday,159:20260430,159:20260430,San Francisco,159,0,,,1,1
+Local Weekday,M163:20260430,M163:20260430,San Francisco,M163,0,,,1,1
+Local Weekday,128:20260430,128:20260430,Tamien,128,1,,,1,1
+Local Weekday,158:20260430,158:20260430,San Jose Diridon,158,1,,,1,1
+Local Weekday,127:20260430,127:20260430,San Francisco,127,0,,,1,1
+Local Weekend,640:20260430,640:20260430,San Jose Diridon,640,1,,,1,1
+Local Weekday,M101:20260430,M101:20260430,San Francisco,M101,0,,,1,1
+Local Weekday,M117:20260430,M117:20260430,San Francisco,M117,0,,,1,1
+Local Weekday,174:20260430,174:20260430,San Jose Diridon,174,1,,,1,1
+Local Weekday,118:20260430,118:20260430,San Jose Diridon,118,1,,,1,1
+Local Weekday,147:20260430,147:20260430,San Francisco,147,0,,,1,1
+Local Weekend,613:20260430,613:20260430,San Francisco,613,0,,,1,1
+Local Weekend,641:20260430,641:20260430,San Francisco,641,0,,,1,1
+Local Weekend,668:20260430,668:20260430,Tamien,668,1,,,1,1
+Local Weekend,623:20260430,623:20260430,San Francisco,623,0,,,1,1
+Local Weekend,633:20260430,633:20260430,San Francisco,633,0,,,1,1
+Local Weekend,663:20260430,663:20260430,San Francisco,663,0,,,1,1
+Local Weekday,M169:20260430,M169:20260430,San Francisco,M169,0,,,1,1
+Local Weekday,162:20260430,162:20260430,San Jose Diridon,162,1,,,1,1
+Local Weekday,166:20260430,166:20260430,San Jose Diridon,166,1,,,1,1
+Local Weekend,620:20260430,620:20260430,San Jose Diridon,620,1,,,1,1
+Local Weekend,634:20260430,634:20260430,Tamien,634,1,,,1,1
+South County,814:20260430,814:20260430,Gilroy,814,1,,,1,1
+Local Weekday,109:20260430,109:20260430,San Francisco,109,0,,,1,1
+Local Weekday,M112:20260430,M112:20260430,Tamien,M112,1,,,1,1
+Local Weekday,M113:20260430,M113:20260430,San Francisco,M113,0,,,1,1
+Local Weekday,M126:20260430,M126:20260430,San Jose Diridon,M126,1,,,1,1
+Local Weekday,M114:20260430,M114:20260430,San Jose Diridon,M114,1,,,1,1
+Local Weekday,M173:20260430,M173:20260430,San Francisco,M173,0,,,1,1
+Local Weekend,616:20260430,616:20260430,San Jose Diridon,616,1,,,1,1
+Express,522:20260430,522:20260430,San Jose Diridon,522,1,,,1,1
+Local Weekday,M109:20260430,M109:20260430,San Francisco,M109,0,,,1,1
+Local Weekend,627:20260430,627:20260430,San Francisco,627,0,,,1,1
+Local Weekend,664:20260430,664:20260430,San Jose Diridon,664,1,,,1,1
+Limited,420:20260430,420:20260430,San Jose Diridon,420,1,,,1,1
+Local Weekday,145:20260430,145:20260430,San Francisco,145,0,,,1,1
+Local Weekend,661:20260430,661:20260430,San Francisco,661,0,,,1,1
+Local Weekday,M154:20260430,M154:20260430,San Jose Diridon,M154,1,,,1,1
+Local Weekday,107:20260430,107:20260430,San Francisco,107,0,,,1,1
+Express,502:20260430,502:20260430,San Jose Diridon,502,1,,,1,1
+Local Weekday,168:20260430,168:20260430,Tamien,168,1,,,1,1
+Local Weekday,157:20260430,157:20260430,San Francisco,157,0,,,1,1
+Local Weekday,116:20260430,116:20260430,Tamien,116,1,,,1,1
+Local Weekend,601:20260430,601:20260430,San Francisco,601,0,,,1,1
+Local Weekend,621:20260430,621:20260430,San Francisco,621,0,,,1,1
+Local Weekday,M170:20260430,M170:20260430,San Jose Diridon,M170,1,,,1,1
+Express,523:20260430,523:20260430,San Francisco,523,0,,,1,1
+Local Weekday,M120:20260430,M120:20260430,Tamien,M120,1,,,1,1
+Local Weekday,M111:20260430,M111:20260430,San Francisco,M111,0,,,1,1
+Local Weekday,101:20260430,101:20260430,San Francisco,101,0,,,1,1
+Local Weekday,M118:20260430,M118:20260430,San Jose Diridon,M118,1,,,1,1
+Local Weekday,163:20260430,163:20260430,San Francisco,163,0,,,1,1
+Local Weekday,123:20260430,123:20260430,San Francisco,123,0,,,1,1
+Local Weekday,M110:20260430,M110:20260430,San Jose Diridon,M110,1,,,1,1
+Local Weekend,625:20260430,625:20260430,San Francisco,625,0,,,1,1
+Local Weekend,662:20260430,662:20260430,Tamien,662,1,,,1,1
+Local Weekday,102:20260430,102:20260430,San Jose Diridon,102,1,,,1,1
+Local Weekday,M166:20260430,M166:20260430,San Jose Diridon,M166,1,,,1,1
+South County,822:20260430,822:20260430,Gilroy,822,1,,,1,1
+Local Weekday,137:20260430,137:20260430,San Francisco,137,0,,,1,1
+Local Weekday,M124:20260430,M124:20260430,Tamien,M124,1,,,1,1
+Local Weekday,M147:20260430,M147:20260430,San Francisco,M147,0,,,1,1
+Local Weekday,M131:20260430,M131:20260430,San Francisco,M131,0,,,1,1
+Local Weekday,165:20260430,165:20260430,San Francisco,165,0,,,1,1
+Local Weekday,M156:20260430,M156:20260430,Tamien,M156,1,,,1,1
+Local Weekday,M148:20260430,M148:20260430,Tamien,M148,1,,,1,1
+Local Weekday,133:20260430,133:20260430,San Francisco,133,0,,,1,1
+Local Weekday,135:20260430,135:20260430,San Francisco,135,0,,,1,1
+Local Weekend,648:20260430,648:20260430,San Jose Diridon,648,1,,,1,1
+Express,507:20260430,507:20260430,San Francisco,507,0,,,1,1
+Local Weekday,151:20260430,151:20260430,San Francisco,151,0,,,1,1
+Local Weekend,644:20260430,644:20260430,San Jose Diridon,644,1,,,1,1
+Local Weekday,113:20260430,113:20260430,San Francisco,113,0,,,1,1
+Local Weekday,M106:20260430,M106:20260430,San Jose Diridon,M106,1,,,1,1
+Local Weekday,M122:20260430,M122:20260430,San Jose Diridon,M122,1,,,1,1
+Local Weekday,129:20260430,129:20260430,San Francisco,129,0,,,1,1
+Local Weekday,M138:20260430,M138:20260430,San Jose Diridon,M138,1,,,1,1
+Local Weekday,154:20260430,154:20260430,San Jose Diridon,154,1,,,1,1
+Local Weekend,658:20260430,658:20260430,Tamien,658,1,,,1,1
+Limited,405:20260430,405:20260430,San Francisco,405,0,,,1,1
+Local Weekend,655:20260430,655:20260430,San Francisco,655,0,,,1,1
+Limited,428:20260430,428:20260430,San Jose Diridon,428,1,,,1,1
+Local Weekday,M145:20260430,M145:20260430,San Francisco,M145,0,,,1,1
+Local Weekday,M164:20260430,M164:20260430,Tamien,M164,1,,,1,1
+Local Weekday,130:20260430,130:20260430,San Jose Diridon,130,1,,,1,1
+Local Weekday,M143:20260430,M143:20260430,San Francisco,M143,0,,,1,1
+Local Weekday,M123:20260430,M123:20260430,San Francisco,M123,0,,,1,1
+Limited,417:20260430,417:20260430,San Francisco,417,0,,,1,1
+Local Weekday,173:20260430,173:20260430,San Francisco,173,0,,,1,1
+Local Weekend,645:20260430,645:20260430,San Francisco,645,0,,,1,1
+Local Weekend,654:20260430,654:20260430,Tamien,654,1,,,1,1
+Limited,404:20260430,404:20260430,San Jose Diridon,404,1,,,1,1
+Local Weekend,646:20260430,646:20260430,Tamien,646,1,,,1,1
+Limited,401:20260430,401:20260430,San Francisco,401,0,,,1,1
+South County,848:20260430,848:20260430,Gilroy,848,1,,,1,1
+Local Weekday,143:20260430,143:20260430,San Francisco,143,0,,,1,1
+Local Weekday,M135:20260430,M135:20260430,San Francisco,M135,0,,,1,1
+Express,511:20260430,511:20260430,San Francisco,511,0,,,1,1
+Local Weekday,169:20260430,169:20260430,San Francisco,169,0,,,1,1
+Local Weekend,639:20260430,639:20260430,San Francisco,639,0,,,1,1
+Local Weekend,647:20260430,647:20260430,San Francisco,647,0,,,1,1
+Local Weekend,659:20260430,659:20260430,San Francisco,659,0,,,1,1
+Local Weekday,155:20260430,155:20260430,San Francisco,155,0,,,1,1
+Local Weekend,632:20260430,632:20260430,San Jose Diridon,632,1,,,1,1
+Local Weekday,141:20260430,141:20260430,San Francisco,141,0,,,1,1
+Local Weekday,M144:20260430,M144:20260430,Tamien,M144,1,,,1,1
+Local Weekday,126:20260430,126:20260430,San Jose Diridon,126,1,,,1,1
+Local Weekday,M162:20260430,M162:20260430,San Jose Diridon,M162,1,,,1,1
+Local Weekend,631:20260430,631:20260430,San Francisco,631,0,,,1,1
+Local Weekday,121:20260430,121:20260430,San Francisco,121,0,,,1,1
+Local Weekend,607:20260430,607:20260430,San Francisco,607,0,,,1,1
+Local Weekend,617:20260430,617:20260430,San Francisco,617,0,,,1,1
+Express,519:20260430,519:20260430,San Francisco,519,0,,,1,1
+South County,819:20260430,819:20260430,San Jose Diridon,819,0,,,1,1
+Local Weekday,M174:20260430,M174:20260430,San Jose Diridon,M174,1,,,1,1
+Local Weekend,643:20260430,643:20260430,San Francisco,643,0,,,1,1
+South County,811:20260430,811:20260430,San Jose Diridon,811,0,,,1,1
+Local Weekday,M105:20260430,M105:20260430,San Francisco,M105,0,,,1,1
+Local Weekend,637:20260430,637:20260430,San Francisco,637,0,,,1,1
+Local Weekday,105:20260430,105:20260430,San Francisco,105,0,,,1,1
+Local Weekend,635:20260430,635:20260430,San Francisco,635,0,,,1,1
+Limited,408:20260430,408:20260430,San Jose Diridon,408,1,,,1,1
+Local Weekday,M153:20260430,M153:20260430,San Francisco,M153,0,,,1,1
+Local Weekend,610:20260430,610:20260430,Tamien,610,1,,,1,1
+Local Weekday,M116:20260430,M116:20260430,Tamien,M116,1,,,1,1
+Local Weekday,152:20260430,152:20260430,Tamien,152,1,,,1,1
+Local Weekday,M158:20260430,M158:20260430,San Jose Diridon,M158,1,,,1,1
+Local Weekday,M132:20260430,M132:20260430,Tamien,M132,1,,,1,1
+Local Weekday,M142:20260430,M142:20260430,San Jose Diridon,M142,1,,,1,1
+Local Weekday,146:20260430,146:20260430,San Jose Diridon,146,1,,,1,1
+Local Weekend,652:20260430,652:20260430,San Jose Diridon,652,1,,,1,1
+Local Weekday,132:20260430,132:20260430,Tamien,132,1,,,1,1
+Local Weekday,M119:20260430,M119:20260430,San Francisco,M119,0,,,1,1
+Local Weekend,626:20260430,626:20260430,Tamien,626,1,,,1,1
+Express,503:20260430,503:20260430,San Francisco,503,0,,,1,1
+Express,514:20260430,514:20260430,San Jose Diridon,514,1,,,1,1
+Local Weekday,M141:20260430,M141:20260430,San Francisco,M141,0,,,1,1
+Local Weekday,124:20260430,124:20260430,Tamien,124,1,,,1,1
+Local Weekday,M172:20260430,M172:20260430,Tamien,M172,1,,,1,1
+Local Weekday,M176:20260430,M176:20260430,Tamien,M176,1,,,1,1
+Express,518:20260430,518:20260430,San Jose Diridon,518,1,,,1,1
+Local Weekend,614:20260430,614:20260430,Tamien,614,1,,,1,1
+Local Weekend,628:20260430,628:20260430,San Jose Diridon,628,1,,,1,1
+Local Weekday,M165:20260430,M165:20260430,San Francisco,M165,0,,,1,1
+Local Weekday,M130:20260430,M130:20260430,San Jose Diridon,M130,1,,,1,1
+Local Weekday,M115:20260430,M115:20260430,San Francisco,M115,0,,,1,1
+Local Weekend,665:20260430,665:20260430,San Francisco,665,0,,,1,1
+Express,510:20260430,510:20260430,San Jose Diridon,510,1,,,1,1
+Local Weekday,M152:20260430,M152:20260430,Tamien,M152,1,,,1,1
+Local Weekday,134:20260430,134:20260430,San Jose Diridon,134,1,,,1,1
+Local Weekday,150:20260430,150:20260430,San Jose Diridon,150,1,,,1,1
+Local Weekday,M103:20260430,M103:20260430,San Francisco,M103,0,,,1,1
+Local Weekend,608:20260430,608:20260430,San Jose Diridon,608,1,,,1,1
+Local Weekend,649:20260430,649:20260430,San Francisco,649,0,,,1,1
+Local Weekday,M125:20260430,M125:20260430,San Francisco,M125,0,,,1,1
+Local Weekday,M167:20260430,M167:20260430,San Francisco,M167,0,,,1,1
+Local Weekend,638:20260430,638:20260430,Tamien,638,1,,,1,1
+South County,809:20260430,809:20260430,San Jose Diridon,809,0,,,1,1
+Local Weekend,660:20260430,660:20260430,San Jose Diridon,660,1,,,1,1
+Local Weekend,630:20260430,630:20260430,Tamien,630,1,,,1,1
+Local Weekday,149:20260430,149:20260430,San Francisco,149,0,,,1,1
+Local Weekday,M161:20260430,M161:20260430,San Francisco,M161,0,,,1,1
+Local Weekday,M160:20260430,M160:20260430,Tamien,M160,1,,,1,1
+Local Weekday,167:20260430,167:20260430,San Francisco,167,0,,,1,1
+South County,805:20260430,805:20260430,San Jose Diridon,805,0,,,1,1
+Local Weekday,111:20260430,111:20260430,San Francisco,111,0,,,1,1
+Local Weekday,131:20260430,131:20260430,San Francisco,131,0,,,1,1
+Limited,412:20260430,412:20260430,San Jose Diridon,412,1,,,1,1
+Local Weekend,612:20260430,612:20260430,San Jose Diridon,612,1,,,1,1
+Local Weekend,622:20260430,622:20260430,Tamien,622,1,,,1,1
