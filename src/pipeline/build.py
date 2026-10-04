@@ -4,7 +4,7 @@ Nightly build: refresh the arrivals table, then rewrite the website files.
     python -m src.pipeline.build            # incremental (cron)
     python -m src.pipeline.build --full     # recompute every day, e.g. after changing scoring rules
 
-Writes static/data/*.json and static/plots/{daily_stats,commute_delays}.html,
+Writes static/data/*.json and static/plots/{daily_stats,commute_delays}.html (git-ignored),
 which scripts/export_to_website.py copies to the website at 02:30.
 """
 import argparse
