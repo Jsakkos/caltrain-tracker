@@ -166,3 +166,27 @@ data/analytics.duckdb.wal
 
 # Half-written GTFS feed folders (renamed into place when complete)
 gtfs_feeds/.*.partial/
+
+# Nightly build output (python -m src.pipeline.build). Regenerated every night on
+# the server and copied to the website by scripts/export_to_website.py, so it is
+# not committed. Hand-made files under static/ (dashboard.json, station_stats.json,
+# stations/, the other notebook plots) stay tracked, hence the explicit list.
+static/data/stats.json
+static/data/daily_performance.json
+static/data/station_performance.json
+static/data/train_performance.json
+static/data/hourly_heatmap.json
+static/data/commute_analysis.json
+static/data/weekly_summary.json
+static/data/monthly_summary.json
+static/data/incidents.json
+static/data/incident_trajectories.json
+static/plots/daily_stats.html
+static/plots/commute_delay.html
+
+# Written by the retired Prefect flow; no current job produces them
+static/data/processed_arrivals.csv
+static/data/summary_stats.json
+
+# Pre-rename name of the build's commute plot
+static/plots/commute_delays.html

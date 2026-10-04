@@ -48,12 +48,14 @@ uv run pytest
 │   └── config.py            # API key loading for the 511 schedule scripts
 ├── scripts/                 # GTFS update/backfill, freshness check, NAS backup, website export, parity check
 ├── deploy/crontab.txt       # every scheduled job
-├── static/                  # build output: data/*.json, plots/*.html
+├── static/                  # website files; build output is git-ignored (see below)
 ├── gtfs_data/               # current GTFS static feed (refreshed daily)
 ├── gtfs_feeds/              # every GTFS schedule version, matched to arrivals by date
 ├── tests/                   # pytest suite
 └── docker-compose.yaml      # the collector service
 ```
+
+`static/` is only partly in git. The nightly build writes `data/*.json` (stats, daily/station/train performance, heatmap, commute, weekly/monthly summaries, incidents) plus `plots/daily_stats.html` and `plots/commute_delay.html`. Those are listed in `.gitignore`, so a fresh checkout doesn't have them; run `python -m src.pipeline.build` to generate them. The rest of `static/` (`dashboard.json`, `station_stats.json`, `stations/`, and the other plots) is hand-made from `notebooks/visualizations/` and stays committed.
 
 # Methodology
 
