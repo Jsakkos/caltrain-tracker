@@ -205,5 +205,5 @@ def write_dashboard(out_dir: Path, arrivals: pd.DataFrame, now: datetime) -> lis
     for name, payload in build_dashboard(arrivals, now).items():
         write_json_atomic(data_dir / name, payload, indent=2 if name in pretty else None)
     write_html_atomic(plots_dir / "daily_stats.html", daily_stats_figure(arrivals))
-    write_html_atomic(plots_dir / "commute_delays.html", commute_figure(arrivals))
-    return DASHBOARD_FILES + ["daily_stats.html", "commute_delays.html"]
+    write_html_atomic(plots_dir / "commute_delay.html", commute_figure(arrivals))
+    return DASHBOARD_FILES + ["daily_stats.html", "commute_delay.html"]

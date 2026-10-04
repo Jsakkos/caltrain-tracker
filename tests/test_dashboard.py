@@ -5,7 +5,7 @@ import pandas as pd
 import pytest
 
 from src.pipeline.dashboard import (
-    DASHBOARD_FILES, build_dashboard, commute_shares, daily_severity_shares, write_json_atomic,
+    DASHBOARD_FILES, build_dashboard, commute_shares, daily_severity_shares, write_dashboard, write_json_atomic,
 )
 
 
@@ -31,6 +31,13 @@ NOW = datetime(2026, 3, 8, 0, 5)
 
 def test_produces_every_website_file():
     assert set(build_dashboard(arrivals(), NOW)) == set(DASHBOARD_FILES)
+
+
+def test_write_dashboard_uses_the_plot_names_the_website_links(tmp_path):
+    written = write_dashboard(tmp_path, arrivals(), NOW)
+    # MyWebsite src/lib/api.ts links plots/daily_stats.html and plots/commute_delay.html
+    assert set(written) == set(DASHBOARD_FILES) | {"daily_stats.html", "commute_delay.html"}
+    assert sorted(p.name for p in (tmp_path / "plots").iterdir()) == ["commute_delay.html", "daily_stats.html"]
 
 
 def test_stats():
