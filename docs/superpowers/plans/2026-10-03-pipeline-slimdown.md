@@ -643,7 +643,7 @@ Port `detect_incidents`. Get each incident day's GPS through one DuckDB query (`
 ### Task 2.5: `src/pipeline/build.py` + parity
 CLI: `python -m src.pipeline.build [--full] [--out static/data]`. Writes to a temp dir and renames into place, so the 02:30 export never sees half-written files. `scripts/compare_outputs.py old/ new/` diffs the JSON (numbers within 0.05; lists compared as sets keyed by date/stop/trip). Run `--full` on the snapshot, compare, and explain or fix every difference. Record runtimes for `--full` and incremental runs.
 
-### Task 2.6 (optional, separate PR): fix the after-midnight delay bug
+### Task 2.6 (optional, separate PR): fix the after-midnight delay bug ✅
 Trains scheduled at `24:xx`/`25:xx` are currently scored against the wrong day. Score them against `service_date + interval` instead. This changes published numbers, so it ships separately with a note.
 
 ### Task 2.7: Switch production
