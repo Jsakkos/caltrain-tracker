@@ -609,6 +609,11 @@ for h in sorted(set(a) | set(b)):
 EOF
 ```
 
+**Found during the 2026-10-03 cutover (fixed on the branch):**
+- Rebuilding the Prefect image pulled SQLAlchemy 2.1.3, and the Prefect 3.8.7 scheduler failed every minute (`Can't evaluate bulk DML statement`). Pinned `SQLAlchemy<2.1`.
+- The `prefect` service had no `API_KEY` in its environment; it only worked through the server's hardcoded key fallback. Without it the GTFS flow failed to deploy. Added `API_KEY=${API_KEY}`.
+- Prefect cron schedules run in UTC (see Task 3.1).
+
 **Rollback:** `docker compose stop collector`, `git checkout 3dbae33 && git apply ~/caltrain-server-local-2026-10-03.patch`, then `docker compose up -d --build prefect`. That re-registers the collection deployment from the old code.
 
 ---
@@ -652,8 +657,11 @@ Exit criteria: `docker compose ps` shows only `collector`; the host crontab is t
 
 ### Task 3.1: `deploy/crontab.txt` (checked in, installed with `crontab deploy/crontab.txt`)
 
+The host clock is **UTC** (`timedatectl`: Etc/UTC), and the Prefect deployments had `timezone: None`, so "midnight" processing actually ran at 17:00 Pacific and the GTFS check at 16:30. Decide with the user which local time they want; the crontab below pins Pacific explicitly with `CRON_TZ` (supported by cronie and Debian cron ≥ 3.0pl1-133; check with `man 5 crontab` first, otherwise convert the times to UTC).
+
 ```cron
-# Caltrain tracker. Times are host-local (America/Los_Angeles).
+# Caltrain tracker. Times are America/Los_Angeles; the host clock is UTC.
+CRON_TZ=America/Los_Angeles
 PY=/home/jsakkos/caltrain-prefect/.venv/bin/python
 APP=/home/jsakkos/caltrain-prefect
 30 23 * * *  cd $APP && flock -n /tmp/caltrain-gtfs.lock  $PY scripts/check_gtfs_updates.py   >> /home/jsakkos/caltrain-gtfs.log 2>&1
