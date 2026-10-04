@@ -21,11 +21,11 @@ Measured from `src/flows/data_processing.py`:
 5. **Scheduled time** = `date + normalize_time(arrival_time)`, where hours ≥ 24 wrap to `hour % 24` on the *same* date (a known bug, kept for parity).
 6. **Delay** = `(actual - scheduled)` in minutes; then `> 500 → 0`, `< -100 → 0`; then `is_delayed = delay > 4`, severity `Major` if > 15, `Minor` if > 4, else `On Time`; then `< 0 → 0`.
 7. **Commute period** from the actual arrival: weekend (Sat/Sun) → `Weekend`; `06:00:00 ≤ t ≤ 09:00:00` → `Morning`; `15:30:00 ≤ t ≤ 19:30:00` → `Evening`; else `Other`. `hour` = actual arrival hour.
-8. **Ping weighting in plots.** Legacy `processed_df` has one row *per matched ping* (a fan-out merge), the dashboard JSON and incidents deduplicate to one row per arrival, but `daily_stats.html` and `commute_delays.html` do **not**, so they're weighted by ping count. The arrivals table stores `ping_count` so the plots can reproduce this exactly.
+8. **Ping weighting in plots.** Legacy `processed_df` has one row *per matched ping* (a fan-out merge), the dashboard JSON and incidents deduplicate to one row per arrival, but `daily_stats.html` and `commute_delay.html` do **not**, so they're weighted by ping count. The arrivals table stores `ping_count` so the plots can reproduce this exactly.
 9. **`station_performance.json` has `stop_lat`/`stop_lon` = null** (the legacy frame never carries coordinates). Kept.
 10. `processed_arrivals.csv` (608 MB per-ping CSV) and `summary_stats.json` are not read by the website (`export_to_website.py` overwrites the latter with `stats.json`). Not produced.
 
-Outputs the website reads (from MyWebsite `src/lib/api.ts`): `stats.json`, `daily_performance.json`, `station_performance.json`, `train_performance.json`, `hourly_heatmap.json`, `commute_analysis.json`, `weekly_summary.json`, `monthly_summary.json`, `incidents.json`, `incident_trajectories.json`, and `plots/daily_stats.html`. (It links `plots/commute_delay.html`, but the flow has always written `commute_delays.html`; we keep writing the latter and flag it to the user.)
+Outputs the website reads (from MyWebsite `src/lib/api.ts`): `stats.json`, `daily_performance.json`, `station_performance.json`, `train_performance.json`, `hourly_heatmap.json`, `commute_analysis.json`, `weekly_summary.json`, `monthly_summary.json`, `incidents.json`, `incident_trajectories.json`, `plots/daily_stats.html` and `plots/commute_delay.html`. (The Prefect flow and the first version of this build wrote `commute_delays.html`, so the site's `commute_delay.html` was a stale copy; the build now writes the name the site links.)
 
 ## Files
 
