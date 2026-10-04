@@ -78,13 +78,61 @@ def test_delay_and_severity(env, actual, delay, severity, delayed):
     assert bool(row.is_delayed) is delayed
 
 
-def test_after_midnight_schedule_wraps_onto_the_same_date(env):
-    # Legacy normalize_time: 24:10:00 -> 00:10:00 on the ping's own date.
-    add_pings(env["conn"], ping("103", SF[0], AT_SF, f"{DAY} 00:12:00"))
+def test_after_midnight_call_is_scored_on_its_service_date(env):
+    # 103's 24:10 call on the 4th is really 00:10 on the 5th.
+    add_pings(env["conn"], ping("103", SF[0], AT_SF, "2026-03-05 00:12:00"))
     run(env)
-    row = one(env, "103", SF[0])
-    assert row.arrival_time == "00:10:00"
+    df = load_arrivals(env["store"])
+    assert len(df) == 1
+    row = one(env, "103", SF[0], DAY)
+    assert row.arrival_time == "24:10:00"
+    assert row.actual_arrival_time == datetime(2026, 3, 5, 0, 12)
     assert row.delay_minutes == pytest.approx(2.0)
+
+
+def test_after_midnight_pings_count_once_on_each_service_day(env):
+    # 103 runs every night, so the 5th's own schedule also has a 103 at 24:10
+    # (00:10 on the 6th); a ping at 00:12 on the 5th must not be scored there too.
+    add_pings(env["conn"],
+              ping("103", SF[0], AT_SF, "2026-03-05 00:12:00"),
+              ping("103", SF[0], AT_SF, "2026-03-06 00:16:00"))
+    run(env)
+    df = load_arrivals(env["store"])
+    assert len(df) == 2
+    assert one(env, "103", SF[0], "2026-03-04").delay_minutes == pytest.approx(2.0)
+    assert one(env, "103", SF[0], "2026-03-05").delay_minutes == pytest.approx(6.0)
+    assert set(df.ping_count) == {1}
+
+
+def test_early_morning_calls_stay_on_their_own_day(tmp_path):
+    feeds = tmp_path / "feeds"
+    make_feed(feeds, calls=[("103", SF[0], "24:10:00"), ("105", SF[0], "00:30:00")])
+    env = {"feeds": feeds, "db": tmp_path / "t.db", "store": open_store(str(tmp_path / "a.duckdb"))}
+    add_pings(make_db(env["db"]),
+              ping("103", SF[0], AT_SF, "2026-03-05 00:12:00"),
+              ping("105", SF[0], AT_SF, "2026-03-05 00:31:00"))
+    run(env)
+    df = load_arrivals(env["store"])
+    assert sorted(zip(df.trip_id, df.date.dt.strftime("%Y-%m-%d"))) == [("103", "2026-03-04"), ("105", "2026-03-05")]
+
+
+def test_late_train_past_midnight_is_scored_on_its_service_date(tmp_path):
+    feeds = tmp_path / "feeds"
+    make_feed(feeds, calls=[("199", SF[0], "23:50:00")])
+    env = {"feeds": feeds, "db": tmp_path / "t.db", "store": open_store(str(tmp_path / "a.duckdb"))}
+    add_pings(make_db(env["db"]), ping("199", SF[0], AT_SF, "2026-03-05 00:10:00"))
+    run(env)
+    row = one(env, "199", SF[0], DAY)
+    assert row.delay_minutes == pytest.approx(20.0)
+    assert row.delay_severity == "Major"
+
+
+def test_new_after_midnight_pings_recompute_the_previous_service_day(env):
+    add_pings(env["conn"], ping("101", SF[0], AT_SF, f"{DAY} 08:03:00"))
+    run(env)
+    add_pings(env["conn"], ping("103", SF[0], AT_SF, "2026-03-05 00:12:00"))
+    assert run(env) == [date(2026, 3, 4), date(2026, 3, 5)]
+    assert one(env, "103", SF[0], DAY).delay_minutes == pytest.approx(2.0)
 
 
 @pytest.mark.parametrize("day, actual, period", [
