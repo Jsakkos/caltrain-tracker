@@ -1,37 +1,19 @@
+# Only the collector runs as a container. Everything else (GTFS check, nightly
+# build, backup, website export) is a host cron job: see deploy/crontab.txt.
 services:
-  app:
+  collector:
     build:
       context: .
-      dockerfile: Dockerfile.app
-    ports:
-      - "8181:8000"
+      dockerfile: Dockerfile.collector
     environment:
       - API_KEY=${API_KEY}
-      - TZ=America/Los_Angeles
-      - PREFECT_API_URL=http://${HOST}:4200/api
+      - DB_PATH=/app/data/caltrain_lat_long.db
     volumes:
-      - ./static:/app/static
-      - ./gtfs_data:/app/gtfs_data
-      - ./data:/app/data  # Mount data directory for SQLite database
+      - ./data:/app/data
     restart: always
-
-  prefect:
-    build:
-      context: .
-      dockerfile: Dockerfile.prefect
-    ports:
-      - "4200:4200"
-    volumes:
-      - prefect_data:/root/.prefect
-      - ./src:/app/src
-      - ./data:/app/data  # Mount data directory for SQLite database
-      - ./static:/app/static  # Mount static directory for processed data output
-      - ./gtfs_data:/app/gtfs_data  # Current schedule, refreshed by the GTFS update flow
-      - ./gtfs_feeds:/app/gtfs_feeds  # Every schedule version, matched to arrivals by date
-    environment:
-      - PREFECT_UI_URL=http://${HOST}:4200/api
-      - PREFECT_API_URL=http://${HOST}:4200/api
-    restart: always
-
-volumes:
-  prefect_data:
+    stop_grace_period: 40s  # a fetch in flight can take up to its 30 s timeout
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "3"

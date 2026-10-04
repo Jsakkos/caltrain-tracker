@@ -1,0 +1,26 @@
+# Caltrain tracker: host crontab for jsakkos@pve-docker. Install with:
+#     crontab deploy/crontab.txt
+# This replaces the whole user crontab, so keep every job here.
+#
+# Times are UTC: the host clock is UTC and Ubuntu's cron has no CRON_TZ.
+# Pacific equivalents are shown for daylight time (PDT); in winter they're an hour earlier.
+# The collector itself runs in Docker (docker compose up -d collector), not from cron.
+
+SHELL=/bin/bash
+APP=/home/jsakkos/caltrain-prefect
+PY=/home/jsakkos/caltrain-prefect/.venv/bin/python
+
+# 01:30 UTC (18:30 PDT): store a new published GTFS schedule if 511 has one
+30 1 * * *   cd $APP && flock -n /tmp/caltrain-gtfs.lock $PY scripts/check_gtfs_updates.py >> /home/jsakkos/caltrain-gtfs.log 2>&1
+
+# 02:00 UTC (19:00 PDT): recompute new/recent arrivals and rewrite static/data + static/plots
+0 2 * * *    cd $APP && flock -n /tmp/caltrain-build.lock $PY -m src.pipeline.build >> /home/jsakkos/caltrain-build.log 2>&1
+
+# 02:15 UTC: SQLite + GTFS snapshot to the NAS
+15 2 * * *   $PY $APP/scripts/backup_to_nas.py >> /home/jsakkos/caltrain-backup.log 2>&1
+
+# 02:30 UTC: copy static/ to the MyWebsite repo and push (Netlify deploys it)
+30 2 * * *   $PY $APP/scripts/export_to_website.py >> /home/jsakkos/caltrain-export.log 2>&1
+
+# Every 15 minutes: log STALE (and ping HEALTHCHECK_URL/fail, if set in .env) when the collector stops writing
+*/15 * * * * cd $APP && $PY scripts/check_freshness.py >> /home/jsakkos/caltrain-freshness.log 2>&1

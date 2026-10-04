@@ -139,3 +139,39 @@ def project_to_route(lat, lon, shape_points):
             best_route_dist = d1 + t * (d2 - d1)
 
     return best_route_dist
+
+
+def project_to_route_many(lats, lons, shape_points, chunk=4096):
+    """
+    Vectorized project_to_route: distance in meters along the route for each point.
+
+    Same nearest-segment rule as the scalar version (first segment wins ties),
+    evaluated as a points x segments matrix in chunks to bound memory.
+    """
+    import numpy as np
+
+    shape = np.asarray(shape_points, dtype=float)
+    lat1, lon1, d1 = shape[:-1, 0], shape[:-1, 1], shape[:-1, 2]
+    dlat, dlon, dd = shape[1:, 0] - lat1, shape[1:, 1] - lon1, shape[1:, 2] - d1
+    seg_len_sq = dlat * dlat + dlon * dlon
+    degenerate = seg_len_sq < 1e-14
+    safe_len = np.where(degenerate, 1.0, seg_len_sq)
+
+    lats, lons = np.asarray(lats, dtype=float), np.asarray(lons, dtype=float)
+    out = np.empty(len(lats))
+    for start in range(0, len(lats), chunk):
+        la = lats[start:start + chunk, None]
+        lo = lons[start:start + chunk, None]
+        t = np.clip(((la - lat1) * dlat + (lo - lon1) * dlon) / safe_len, 0.0, 1.0)
+        t = np.where(degenerate, 0.0, t)
+        p_lat, p_lon = lat1 + t * dlat, lon1 + t * dlon
+
+        r1, r2 = np.radians(la), np.radians(p_lat)
+        a = (np.sin((r2 - r1) / 2) ** 2
+             + np.cos(r1) * np.cos(r2) * np.sin(np.radians(p_lon - lo) / 2) ** 2)
+        dist = 6371000 * 2 * np.arctan2(np.sqrt(a), np.sqrt(1 - a))
+
+        best = dist.argmin(axis=1)
+        rows = np.arange(len(best))
+        out[start:start + chunk] = d1[best] + t[rows, best] * dd[best]
+    return out
