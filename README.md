@@ -10,14 +10,15 @@ A modernized application for tracking and analyzing Caltrain performance metrics
 - Historical analysis of on-time performance
 - Visualization of delay patterns by time of day, day of week, and stop location
 - REST API for programmatic access to Caltrain performance data
-- Automated data collection and processing using Prefect workflows
+- Automated data collection (a small collector container) and processing (Prefect workflows)
 
 ## Architecture
 
 The application is built using the following technologies:
 
 - **FastAPI**: Modern, high-performance web framework for building APIs
-- **Prefect**: Workflow orchestration for managing data collection and processing tasks
+- **Collector**: Stdlib-only Python process (`src/collector.py`) that polls 511 once a minute into SQLite
+- **Prefect**: Workflow orchestration for the nightly processing and GTFS update flows
 - **SQLite**: Primary data store for GPS/arrival data (`data/caltrain_lat_long.db`)
 - **PostgreSQL**: Dedicated backend for Prefect's orchestration state (flow runs, task runs, deployments). Runs in its own container; not used for application data.
 - **SQLAlchemy**: ORM for database interactions
@@ -27,8 +28,9 @@ The application is built using the following technologies:
 
 ### Service topology
 
-Three Docker Compose services:
+Four Docker Compose services:
 
+- `collector` — polls the 511 VehicleMonitoring feed every 60 s and appends to `data/caltrain_lat_long.db`. No retries within a minute: 511 allows 60 requests/hour per API key, so never run a second poller on the same key. Logs: `docker compose logs -f collector`.
 - `app` — FastAPI application (port 8181)
 - `prefect` — Prefect server + worker running the data pipelines (port 4200). Uses the `postgres` service as its state backend via `PREFECT_API_DATABASE_CONNECTION_URL`.
 - `postgres` — Postgres 16 for Prefect orchestration state only.
@@ -139,7 +141,8 @@ Evening commute hours were defined as 3:30-7:30 pm.
 
 ## Automated daily schedule
 
-- Every minute: Prefect collects GPS data → SQLite
+- Every minute: the `collector` container saves GPS data → SQLite
+- 23:30 daily: `update_gtfs_schedule_flow` checks 511 for a new published schedule (Prefect)
 - 00:00 daily: `process_data_flow` runs (Prefect schedule in the container) — regenerates processed CSV and the 10 dashboard JSON files under `static/data/`
 - 02:15 AM: NAS backup (host cron → `scripts/backup_to_nas.py`)
 - 02:30 AM: Website export (host cron → `scripts/export_to_website.py`) — copies JSON + plots to `~/website-deploy/public/data/caltrain/`, commits, and pushes; Netlify auto-deploys

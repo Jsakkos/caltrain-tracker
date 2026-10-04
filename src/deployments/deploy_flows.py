@@ -16,10 +16,6 @@ else:
 
 # Define overrides for each flow
 OVERRIDES = {
-    "src/flows/data_collection.py:collect_train_data_flow": {
-        "work_pool_name": "my-pool",  # Use your work pool name
-        "cron": "* * * * *",  # Every minute
-    },
     "src/flows/data_processing.py:process_data_flow": {
         "work_pool_name": "my-pool",  # Use your work pool name
         "cron": "0 0 * * *",  # Daily

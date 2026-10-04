@@ -16,7 +16,6 @@ from prefect import flow
 from src.config import API_HOST, API_PORT, STATIC_CONTENT_PATH, DATA_COLLECTION_INTERVAL, PREFECT_API_URL
 from src.db.database import engine, Base
 from src.deployments.deploy_flows import deploy as create_deployments
-from src.flows.data_collection import collect_train_data_flow
 from src.flows.data_processing import process_data_flow
 from src.data.gtfs_loader import load_all_gtfs_data
 # Import the app from main.py instead of app.py
