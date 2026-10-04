@@ -35,16 +35,6 @@ def ensure_output_dirs():
     print(f"✓ Output directory ready: {OUTPUT_DIR}")
 
 
-def export_stats():
-    """Copy summary_stats.json to website as stats.json."""
-    src = SOURCE_DATA / "summary_stats.json"
-    if src.exists():
-        shutil.copy(src, OUTPUT_DIR / "stats.json")
-        print(f"✓ Exported stats.json")
-    else:
-        print(f"⚠ No summary_stats.json found at {src}")
-
-
 def export_dashboard_data():
     """Copy all dashboard JSON data files to website."""
     dashboard_files = [
@@ -148,7 +138,6 @@ def main():
     
     # Run export steps
     ensure_output_dirs()
-    export_stats()
     export_dashboard_data()
     export_plots()
     export_metadata()

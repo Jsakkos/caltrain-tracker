@@ -1,3 +1,5 @@
+# Only the collector runs as a container. Everything else (GTFS check, nightly
+# build, backup, website export) is a host cron job: see deploy/crontab.txt.
 services:
   collector:
     build:
@@ -15,59 +17,3 @@ services:
       options:
         max-size: "5m"
         max-file: "3"
-
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile.app
-    ports:
-      - "8181:8000"
-    environment:
-      - API_KEY=${API_KEY}
-      - TZ=America/Los_Angeles
-      - PREFECT_API_URL=http://${HOST}:4200/api
-    volumes:
-      - ./static:/app/static
-      - ./gtfs_data:/app/gtfs_data
-      - ./data:/app/data  # Mount data directory for SQLite database
-    restart: always
-
-  postgres:
-    image: postgres:16-alpine
-    environment:
-      - POSTGRES_USER=${DB_USER}
-      - POSTGRES_PASSWORD=${DB_PASSWORD}
-      - POSTGRES_DB=prefect
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d prefect"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-    restart: always
-
-  prefect:
-    build:
-      context: .
-      dockerfile: Dockerfile.prefect
-    ports:
-      - "4200:4200"
-    depends_on:
-      postgres:
-        condition: service_healthy
-    volumes:
-      - ./src:/app/src
-      - ./data:/app/data  # Mount data directory for SQLite database
-      - ./static:/app/static  # Mount static directory for processed data output
-      - ./gtfs_data:/app/gtfs_data  # Current schedule, refreshed by the GTFS update flow
-      - ./gtfs_feeds:/app/gtfs_feeds  # Every schedule version, matched to arrivals by date
-    environment:
-      - API_KEY=${API_KEY}  # src/config.py refuses to load without it
-      - PREFECT_UI_URL=http://${HOST}:4200/api
-      - PREFECT_API_URL=http://${HOST}:4200/api
-      - PREFECT_API_DATABASE_CONNECTION_URL=postgresql+asyncpg://${DB_USER}:${DB_PASSWORD}@postgres:5432/prefect
-    restart: always
-
-volumes:
-  postgres_data:

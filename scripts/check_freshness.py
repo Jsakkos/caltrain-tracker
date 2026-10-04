@@ -15,7 +15,10 @@ from datetime import datetime, time, timedelta, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-DB_PATH = Path(__file__).resolve().parent.parent / "data" / "caltrain_lat_long.db"
+from dotenv import load_dotenv
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+DB_PATH = BASE_DIR / "data" / "caltrain_lat_long.db"
 LOCAL_TZ = ZoneInfo("America/Los_Angeles")
 MAX_AGE = timedelta(minutes=10)
 QUIET_START, QUIET_END = time(1, 0), time(5, 0)  # no trains in service
@@ -45,6 +48,7 @@ def _ping(url: str) -> None:
 
 
 def main() -> int:
+    load_dotenv(BASE_DIR / ".env")  # cron doesn't load it
     now = datetime.now(timezone.utc).astimezone(LOCAL_TZ).replace(tzinfo=None)
     latest = latest_ping(os.environ.get("DB_PATH", str(DB_PATH)))
     stale = is_stale(latest, now)

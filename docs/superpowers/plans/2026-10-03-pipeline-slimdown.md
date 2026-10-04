@@ -653,6 +653,14 @@ On the server: `uv sync` the host venv (adds duckdb), run `build --full` once, a
 
 # Phase 3: Retire Prefect, Postgres and the app container; host cron
 
+**As implemented (2026-10-03), where it differs from the tasks below:**
+- 3.1: Ubuntu 24.04's cron (3.0pl1-184ubuntu2) has no `CRON_TZ`; its man page says so. `deploy/crontab.txt` is in UTC and keeps the existing backup (02:15) and export (02:30) slots, with GTFS at 01:30 and the build at 02:00 UTC (~19:00 Pacific). The build decides "today/yesterday" in Pacific time (`src.pipeline.build.local_now`), since UTC dates would skip recomputing the previous partial Pacific day.
+- 3.2: `check_freshness.py` loads `.env` itself (cron doesn't), so `HEALTHCHECK_URL` can live there.
+- 3.3: The `caltrain-prefect_postgres_data` volume (7.9 GB, Prefect run history only) is left in place for the user to delete; deleting it can't be undone.
+- 3.4: Kept `src/utils/time_utils.py` (referenced by `notebooks/create_heatmap_notebook.py`) and `rebuild_plots.py` (standalone heatmap script). Notebook-only deps moved to a `notebooks` dependency group. `numpy` pinned `<2.5` (2.4.0 was yanked; pandas 2.3 trips 2.5's deprecations).
+- 3.5: Skipped. Nothing reads `train_locations` through SQLite indexes any more (DuckDB scans the file; the freshness check reads by rowid), so a `timestamp` index would only cost write time and disk.
+- Prefect wrote `gtfs_feeds/v20260922` as root with mode 700; ownership was fixed during deploy so cron (as jsakkos) can read it.
+
 Exit criteria: `docker compose ps` shows only `collector`; the host crontab is the checked-in `deploy/crontab.txt`; freed space confirmed; README describes the new stack.
 
 ### Task 3.1: `deploy/crontab.txt` (checked in, installed with `crontab deploy/crontab.txt`)

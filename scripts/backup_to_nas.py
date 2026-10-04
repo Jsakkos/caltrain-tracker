@@ -10,7 +10,7 @@ Usage:
     python scripts/backup_to_nas.py
 
 Cron (daily at 2 AM):
-    0 2 * * * /usr/bin/python3 /home/jsakkos/caltrain-prefect/scripts/backup_to_nas.py
+    see deploy/crontab.txt (02:15 UTC)
 """
 
 import gzip

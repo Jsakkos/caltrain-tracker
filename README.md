@@ -2,100 +2,57 @@
 
 ## Overview
 
-A modernized application for tracking and analyzing Caltrain performance metrics. This project collects real-time train location data from the 511.org GTFS-RT API, processes it to determine arrival times and delays, and provides a web interface for visualizing the data.
-
-## Key Features
-
-- Real-time tracking of Caltrain locations and arrivals
-- Historical analysis of on-time performance
-- Visualization of delay patterns by time of day, day of week, and stop location
-- REST API for programmatic access to Caltrain performance data
-- Automated data collection (a small collector container) and processing (Prefect workflows)
+Tracks Caltrain on-time performance. A small collector records every train's GPS position from the 511.org real-time API once a minute; a nightly build turns those pings into arrivals, scores them against the schedule that was in effect that day, and writes the JSON and plots behind the dashboard on the MyWebsite site.
 
 ## Architecture
 
-The application is built using the following technologies:
+```
+511 VehicleMonitoring ──(every 60 s)──> collector container ──> data/caltrain_lat_long.db (SQLite)
+                                                                        │
+511 datafeeds ──(cron 01:30 UTC)──> scripts/check_gtfs_updates.py ──> gtfs_feeds/, gtfs_data/
+                                                                        │
+                        cron 02:00 UTC: python -m src.pipeline.build  <─┘
+                          · DuckDB reads SQLite directly; arrivals kept in data/analytics.duckdb
+                          · writes static/data/*.json and static/plots/*.html
+                                                                        │
+cron 02:15 UTC: scripts/backup_to_nas.py      cron 02:30 UTC: scripts/export_to_website.py ──> MyWebsite (Netlify)
+```
 
-- **FastAPI**: Modern, high-performance web framework for building APIs
-- **Collector**: Stdlib-only Python process (`src/collector.py`) that polls 511 once a minute into SQLite
-- **Prefect**: Workflow orchestration for the nightly processing and GTFS update flows
-- **SQLite**: Primary data store for GPS/arrival data (`data/caltrain_lat_long.db`)
-- **PostgreSQL**: Dedicated backend for Prefect's orchestration state (flow runs, task runs, deployments). Runs in its own container; not used for application data.
-- **SQLAlchemy**: ORM for database interactions
-- **Alembic**: Database migration tool
-- **Plotly**: Interactive data visualizations
-- **Docker**: Containerization for easy deployment
+- **Collector** (`src/collector.py`, `Dockerfile.collector`): stdlib-only, ~20 MB of RAM. One request a minute and no retries within a minute, because 511 allows 60 requests per hour per API key. Never run a second poller on the same key.
+- **Nightly build** (`src/pipeline/`): `arrivals.py` recomputes only days that are new, the last two Pacific days, or days whose schedule version changed (for example after a monthly archive backfill). `dashboard.py` and `incidents.py` write the website files. A full rebuild of 14 months takes about 15 s.
+- **Scheduling**: host cron (`deploy/crontab.txt`). There's no orchestrator.
 
-### Service topology
+## Setup (pve-docker)
 
-Four Docker Compose services:
+1. Get a 511.org API key at https://511.org/open-data/token and put it in `.env` (see `.env.example`).
+2. Start the collector: `docker compose up -d --build collector`
+3. Install Python deps for the cron jobs: `uv sync --no-dev`
+4. Build once from scratch: `.venv/bin/python -m src.pipeline.build --full`
+5. Install the crontab: `crontab deploy/crontab.txt`
 
-- `collector` — polls the 511 VehicleMonitoring feed every 60 s and appends to `data/caltrain_lat_long.db`. No retries within a minute: 511 allows 60 requests/hour per API key, so never run a second poller on the same key. Logs: `docker compose logs -f collector`.
-- `app` — FastAPI application (port 8181)
-- `prefect` — Prefect server + worker running the data pipelines (port 4200). Uses the `postgres` service as its state backend via `PREFECT_API_DATABASE_CONNECTION_URL`.
-- `postgres` — Postgres 16 for Prefect orchestration state only.
+## Development
 
-The `src/`, `static/`, and `data/` directories are bind-mounted into the containers, so code edits are live without a rebuild. Only dependency or Dockerfile changes require `docker compose build`.
-
-## Getting Started
-
-### Option 1: Using Docker Compose (Recommended)
-
-1. Fork or clone this repository
-2. Get a 511.org API key at https://511.org/open-data/token
-3. Create a `.env` file in the root directory with:
-   ```
-   API_KEY="your-api-key"
-   HOST=localhost
-   DB_USER=prefect
-   DB_PASSWORD=your-strong-password
-   ```
-4. Build and run the Docker containers:
-   ```
-   docker compose build
-   docker compose up -d
-   ```
-5. Access the application:
-   - Web UI: `http://localhost:8181`
-   - API documentation: `http://localhost:8181/docs`
-   - Prefect dashboard: `http://localhost:4200`
-
-### Option 2: Local Development Setup
-
-1. Clone the repository
-2. Run the setup script to prepare your development environment:
-   ```
-   ./setup_dev.sh
-   ```
-3. Edit the `.env` file with your configuration
-4. Run the application:
-   ```
-   python main.py
-   ```
-
-GPS data is written to a local SQLite file at `data/caltrain_lat_long.db`; no separate database server is required for application data. For a full containerized setup that also includes the Prefect Postgres backend, use Option 1.
+```bash
+uv sync
+uv run pytest
+```
 
 ## Project Structure
 
 ```
-├── src/                     # Application source code
-│   ├── api/                 # FastAPI models and endpoints
-│   ├── data/                # Data processing utilities
-│   ├── db/                  # Database connection and session handling
-│   ├── models/              # SQLAlchemy data models
-│   ├── pipelines/           # Prefect workflows for data collection and processing
-│   ├── utils/               # Utility functions (time, geo, etc.)
-│   └── config.py            # Application configuration
-├── alembic/                 # Database migrations
-├── static/                  # Static content (plots, data files)
-│   ├── plots/               # Generated visualizations
-│   └── data/                # Generated data files
-├── gtfs_data/               # Current GTFS static feed (refreshed daily)
-├── gtfs_feeds/              # Every GTFS schedule version, matched to arrivals by date
-├── docker-compose.yaml      # Docker Compose configuration
-├── Dockerfile               # Docker image definition
-├── main.py                  # Application entry point
-└── requirements.txt         # Python dependencies
+├── src/
+│   ├── collector.py         # 511 poller (runs in the collector container)
+│   ├── pipeline/            # nightly DuckDB build: arrivals, dashboard files, incidents
+│   ├── data/gtfs_feeds.py   # versioned GTFS schedules, picked per date
+│   ├── utils/               # geo (route projection) and time helpers
+│   └── config.py            # API key loading for the 511 schedule scripts
+├── scripts/                 # GTFS update/backfill, freshness check, NAS backup, website export, parity check
+├── deploy/crontab.txt       # every scheduled job
+├── static/                  # build output: data/*.json, plots/*.html
+├── gtfs_data/               # current GTFS static feed (refreshed daily)
+├── gtfs_feeds/              # every GTFS schedule version, matched to arrivals by date
+├── tests/                   # pytest suite
+└── docker-compose.yaml      # the collector service
 ```
 
 # Methodology
@@ -110,7 +67,7 @@ The list of stops and stop times were downloaded from the GTFS API here: http://
 
 Caltrain's timetable changes several times a year, so each arrival is compared against the schedule that was in effect on its date. Every schedule version is kept under `gtfs_feeds/`:
 
-- `v<feed_version>/`: feeds published on the datafeeds endpoint. The "Update GTFS Schedule" Prefect flow checks for a new version every night at 23:30, stores it, and refreshes `gtfs_data/` (run `python scripts/check_gtfs_updates.py` to do the same by hand).
+- `v<feed_version>/`: feeds published on the datafeeds endpoint. `scripts/check_gtfs_updates.py` checks for a new version every night (host cron), stores it, and refreshes `gtfs_data/`.
 - `historic-YYYY-MM/`: the Caltrain rows of 511's monthly regional archive (`datafeeds?historic=YYYY-MM`), which lists the trips that actually ran on each day, holidays and mid-month changes included. These also keep 511's `stop_observations.txt` rows for Caltrain.
 
 `src/data/gtfs_feeds.py` picks the schedule for a date: a monthly archive if one covers it, otherwise the newest published timetable in effect. Archives appear a few days after each month ends; to add them:
@@ -139,25 +96,29 @@ Evening commute hours were defined as 3:30-7:30 pm.
 
 # Operations
 
-## Automated daily schedule
+## Daily schedule (host cron, UTC; Pacific is UTC-7 in summer, UTC-8 in winter)
 
-- Every minute: the `collector` container saves GPS data → SQLite
-- 23:30 daily: `update_gtfs_schedule_flow` checks 511 for a new published schedule (Prefect)
-- 00:00 daily: `process_data_flow` runs (Prefect schedule in the container) — regenerates processed CSV and the 10 dashboard JSON files under `static/data/`
-- 02:15 AM: NAS backup (host cron → `scripts/backup_to_nas.py`)
-- 02:30 AM: Website export (host cron → `scripts/export_to_website.py`) — copies JSON + plots to `~/website-deploy/public/data/caltrain/`, commits, and pushes; Netlify auto-deploys
+| UTC | Job | Log |
+|---|---|---|
+| every minute | `collector` container saves GPS pings to SQLite | `docker compose logs -f collector` |
+| every 15 min | `scripts/check_freshness.py`: STALE if no ping for 10 min in service hours; pings `HEALTHCHECK_URL` if set | `~/caltrain-freshness.log` |
+| 01:30 | `scripts/check_gtfs_updates.py`: store a new published schedule | `~/caltrain-gtfs.log` |
+| 02:00 | `python -m src.pipeline.build`: refresh arrivals, rewrite `static/` | `~/caltrain-build.log` |
+| 02:15 | `scripts/backup_to_nas.py` | `~/caltrain-backup.log` |
+| 02:30 | `scripts/export_to_website.py`: copy `static/` to MyWebsite and push; Netlify deploys | `~/caltrain-export.log` |
 
-## Manual pipeline runs
+## Manual runs
 
 ```bash
-# Regenerate JSON from latest SQLite data
-docker exec caltrain-prefect-prefect-1 python -c \
-  "from src.flows.data_processing import process_data_flow; process_data_flow()"
-
-# Push regenerated data to the live dashboard
-python3 scripts/export_to_website.py
+.venv/bin/python -m src.pipeline.build           # incremental, what cron runs
+.venv/bin/python -m src.pipeline.build --full    # recompute every day (after changing scoring rules)
+.venv/bin/python scripts/export_to_website.py     # push the current files to the website
 ```
+
+## Scoring rules and parity
+
+The build reproduces the legacy pandas flow exactly, including its quirks: GTFS times past 24:00 are wrapped onto the ping's own date, and the two plots weight arrivals by ping count. The rules are listed in `docs/superpowers/plans/2026-10-03-duckdb-build.md`. To check a change against a known-good output directory, run `python scripts/compare_outputs.py OLD/data NEW/data`.
 
 ## Dependency pinning
 
-`pandas` is pinned to `>=2.0.0,<3.0.0` in both `requirements.txt` and `requirements-prefect.txt`. Pandas 3.x enables Copy-on-Write by default, which silently breaks chained-assignment patterns (e.g. `df['col'].fillna(x, inplace=True)`). Do not remove the upper bound without auditing the codebase for those patterns first.
+`pandas` is pinned below 3 (3.x turns on copy-on-write by default, which changes chained-assignment behaviour), and `numpy` below 2.5 (pandas 2.3 triggers its timedelta deprecations).
