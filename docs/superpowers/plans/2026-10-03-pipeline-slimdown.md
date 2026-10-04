@@ -653,6 +653,8 @@ On the server: `uv sync` the host venv (adds duckdb), run `build --full` once, a
 
 # Phase 3: Retire Prefect, Postgres and the app container; host cron
 
+**Status:** deployed 2026-10-04 05:29 UTC. Only `collector` runs in Docker; `deploy/crontab.txt` is installed (previous crontab saved to `~/crontab-backup-2026-10-03.txt`); the first cron freshness check passed. On production data the build matched the legacy output apart from pings collected after the last Prefect run (full rebuild 67 s / 1.0 GB peak, nightly 33 s).
+
 **As implemented (2026-10-03), where it differs from the tasks below:**
 - 3.1: Ubuntu 24.04's cron (3.0pl1-184ubuntu2) has no `CRON_TZ`; its man page says so. `deploy/crontab.txt` is in UTC and keeps the existing backup (02:15) and export (02:30) slots, with GTFS at 01:30 and the build at 02:00 UTC (~19:00 Pacific). The build decides "today/yesterday" in Pacific time (`src.pipeline.build.local_now`), since UTC dates would skip recomputing the previous partial Pacific day.
 - 3.2: `check_freshness.py` loads `.env` itself (cron doesn't), so `HEALTHCHECK_URL` can live there.
