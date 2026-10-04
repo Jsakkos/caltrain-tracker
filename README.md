@@ -18,11 +18,22 @@ The application is built using the following technologies:
 
 - **FastAPI**: Modern, high-performance web framework for building APIs
 - **Prefect**: Workflow orchestration for managing data collection and processing tasks
-- **PostgreSQL**: Robust database for storing train location and performance data
+- **SQLite**: Primary data store for GPS/arrival data (`data/caltrain_lat_long.db`)
+- **PostgreSQL**: Dedicated backend for Prefect's orchestration state (flow runs, task runs, deployments). Runs in its own container; not used for application data.
 - **SQLAlchemy**: ORM for database interactions
 - **Alembic**: Database migration tool
 - **Plotly**: Interactive data visualizations
 - **Docker**: Containerization for easy deployment
+
+### Service topology
+
+Three Docker Compose services:
+
+- `app` — FastAPI application (port 8181)
+- `prefect` — Prefect server + worker running the data pipelines (port 4200). Uses the `postgres` service as its state backend via `PREFECT_API_DATABASE_CONNECTION_URL`.
+- `postgres` — Postgres 16 for Prefect orchestration state only.
+
+The `src/`, `static/`, and `data/` directories are bind-mounted into the containers, so code edits are live without a rebuild. Only dependency or Dockerfile changes require `docker compose build`.
 
 ## Getting Started
 
@@ -30,9 +41,12 @@ The application is built using the following technologies:
 
 1. Fork or clone this repository
 2. Get a 511.org API key at https://511.org/open-data/token
-3. Create a `.env` file in the root directory with your API key:
+3. Create a `.env` file in the root directory with:
    ```
    API_KEY="your-api-key"
+   HOST=localhost
+   DB_USER=prefect
+   DB_PASSWORD=your-strong-password
    ```
 4. Build and run the Docker containers:
    ```
@@ -52,11 +66,12 @@ The application is built using the following technologies:
    ./setup_dev.sh
    ```
 3. Edit the `.env` file with your configuration
-4. Create the PostgreSQL database (or use Docker for the database only)
-5. Run the application:
+4. Run the application:
    ```
    python main.py
    ```
+
+GPS data is written to a local SQLite file at `data/caltrain_lat_long.db`; no separate database server is required for application data. For a full containerized setup that also includes the Prefect Postgres backend, use Option 1.
 
 ## Project Structure
 
@@ -119,3 +134,27 @@ On-time performance was calculated on a per-stop, per-train basis. For each stop
 Morning commute hours were defined as 6-9 am.
 ### Evening 
 Evening commute hours were defined as 3:30-7:30 pm.
+
+# Operations
+
+## Automated daily schedule
+
+- Every minute: Prefect collects GPS data → SQLite
+- 00:00 daily: `process_data_flow` runs (Prefect schedule in the container) — regenerates processed CSV and the 10 dashboard JSON files under `static/data/`
+- 02:15 AM: NAS backup (host cron → `scripts/backup_to_nas.py`)
+- 02:30 AM: Website export (host cron → `scripts/export_to_website.py`) — copies JSON + plots to `~/website-deploy/public/data/caltrain/`, commits, and pushes; Netlify auto-deploys
+
+## Manual pipeline runs
+
+```bash
+# Regenerate JSON from latest SQLite data
+docker exec caltrain-prefect-prefect-1 python -c \
+  "from src.flows.data_processing import process_data_flow; process_data_flow()"
+
+# Push regenerated data to the live dashboard
+python3 scripts/export_to_website.py
+```
+
+## Dependency pinning
+
+`pandas` is pinned to `>=2.0.0,<3.0.0` in both `requirements.txt` and `requirements-prefect.txt`. Pandas 3.x enables Copy-on-Write by default, which silently breaks chained-assignment patterns (e.g. `df['col'].fillna(x, inplace=True)`). Do not remove the upper bound without auditing the codebase for those patterns first.

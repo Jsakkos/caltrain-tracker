@@ -5,6 +5,7 @@ Prefect flows for data processing and visualization.
 import os
 import sys
 from datetime import datetime, timedelta
+import numpy as np
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
@@ -219,9 +220,11 @@ def process_arrival_data(raw_df: pd.DataFrame, stops_df: pd.DataFrame, stop_time
     
     # Determine if delayed and delay severity
     comparison_df['is_delayed'] = comparison_df['delay_minutes'] > 4
-    comparison_df.loc[(comparison_df.delay_minutes > 4) & (comparison_df.delay_minutes <= 15), 'delay_severity'] = 'Minor'
-    comparison_df.loc[comparison_df.delay_minutes > 15, 'delay_severity'] = 'Major'
-    comparison_df['delay_severity'].fillna('On Time', inplace=True)
+    comparison_df['delay_severity'] = np.select(
+        [comparison_df.delay_minutes > 15, comparison_df.delay_minutes > 4],
+        ['Major', 'Minor'],
+        default='On Time',
+    )
     comparison_df.loc[comparison_df.delay_minutes < 0, 'delay_minutes'] = 0
     
     # Categorize commute period

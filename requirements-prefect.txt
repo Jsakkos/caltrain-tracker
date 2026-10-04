@@ -1,11 +1,12 @@
 # Data processing and visualization
 plotly>=2.27.0
-pandas>=2.0.0
+pandas>=2.0.0,<3.0.0
 numpy>=1.24.0
 
 # Database
 SQLAlchemy>=2.0.0
 psycopg2-binary>=2.9.5
+asyncpg>=0.29.0
 alembic>=1.12.0
 
 # Workflow Orchestration
