@@ -11,8 +11,9 @@ import argparse
 import json
 import logging
 import time
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 import pandas as pd
 
@@ -23,8 +24,16 @@ from src.pipeline.incidents import detect_incidents
 from src.utils.geo_utils import load_shape_points
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
+LOCAL_TZ = ZoneInfo("America/Los_Angeles")
 
 log = logging.getLogger("build")
+
+
+def local_now(utc_now: datetime | None = None) -> datetime:
+    """Pacific wall time, like the stored pings. The server clock is UTC, so
+    date.today() there would roll over at 17:00 Pacific and skip recomputing
+    the previous (partial) Pacific day."""
+    return (utc_now or datetime.now(timezone.utc)).astimezone(LOCAL_TZ).replace(tzinfo=None)
 
 
 def gps_loader(store):
@@ -45,7 +54,7 @@ def build(db: Path, store_path: Path, out: Path, feeds_root: Path = FEEDS_DIR,
           gtfs_dir: Path = BASE_DIR / "gtfs_data",
           station_meta_path: Path = BASE_DIR / "data" / "station_metadata.json",
           full: bool = False, now: datetime | None = None) -> dict:
-    now = now or datetime.now()
+    now = now or local_now()
     timings = {}
 
     started = time.monotonic()

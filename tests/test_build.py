@@ -36,3 +36,10 @@ def test_build_without_data_leaves_outputs_alone(tmp_path):
     result = build(tmp_path / "t.db", tmp_path / "a.duckdb", out, feeds_root=tmp_path / "feeds")
     assert result["arrivals"] == 0
     assert not out.exists()
+
+
+def test_local_now_is_pacific_wall_time_on_a_utc_host():
+    from datetime import timezone
+    from src.pipeline.build import local_now
+    # 02:00 UTC on Oct 4 is still the evening of Oct 3 in California.
+    assert local_now(datetime(2026, 10, 4, 2, 0, tzinfo=timezone.utc)) == datetime(2026, 10, 3, 19, 0)
