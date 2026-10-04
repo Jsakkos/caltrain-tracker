@@ -94,7 +94,9 @@ FROM cleaned
 
 
 def open_store(path: str) -> duckdb.DuckDBPyConnection:
-    store = duckdb.connect(path)
+    # Capped so the nightly run stays a polite neighbour on a shared host
+    # (DuckDB otherwise takes up to 80% of RAM and every core).
+    store = duckdb.connect(path, config={"memory_limit": "1GB", "threads": 4})
     store.execute("INSTALL sqlite; LOAD sqlite; SET sqlite_all_varchar = true")
     store.execute(SCHEMA)
     return store
