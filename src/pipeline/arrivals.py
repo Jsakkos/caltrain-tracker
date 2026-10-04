@@ -116,8 +116,12 @@ def attach_pings(store: duckdb.DuckDBPyConnection, sqlite_path: str) -> None:
 
 
 def update_arrivals(store: duckdb.DuckDBPyConnection, sqlite_path: str, feeds_root: Path = FEEDS_DIR,
-                    full: bool = False, today: date | None = None) -> list[date]:
-    """Recompute arrivals for days that need it. Returns those days."""
+                    full: bool = False, today: date | None = None, batch_days: int = 31) -> list[date]:
+    """Recompute arrivals for days that need it. Returns those days.
+
+    Days are scored ``batch_days`` at a time, each batch in its own transaction,
+    so memory stays bounded on a full rebuild and an interrupted one resumes.
+    """
     attach_pings(store, sqlite_path)
     today = today or date.today()
     ping_days = [r[0] for r in store.execute("SELECT DISTINCT date FROM pings ORDER BY date").fetchall()]
@@ -127,15 +131,20 @@ def update_arrivals(store: duckdb.DuckDBPyConnection, sqlite_path: str, feeds_ro
     done = dict(store.execute("SELECT date, feed_version FROM processed_days").fetchall())
     recent = {today, today - timedelta(days=1)}
     todo = [d for d in ping_days if full or d in recent or d not in done or done[d] != version[d]]
-    if not todo:
-        return []
 
-    schedule = schedule_for_dates(todo, feeds_root)
-    schedule = schedule.assign(date=pd.to_datetime(schedule["date"]).dt.date)
     stops = load_stops(feeds_root)
     stops = stops[stops["stop_id"].str.isnumeric()]
-    todo_days = pd.DataFrame({"date": todo})
-    processed = pd.DataFrame({"date": todo, "feed_version": [version[d] for d in todo]})
+    for start in range(0, len(todo), batch_days):
+        _score_days(store, todo[start:start + batch_days], version, feeds_root, stops)
+    return todo
+
+
+def _score_days(store: duckdb.DuckDBPyConnection, days: list[date], version: dict, feeds_root: Path,
+                stops: pd.DataFrame) -> None:
+    schedule = schedule_for_dates(days, feeds_root)
+    schedule = schedule.assign(date=pd.to_datetime(schedule["date"]).dt.date)
+    todo_days = pd.DataFrame({"date": days})
+    processed = pd.DataFrame({"date": days, "feed_version": [version[d] for d in days]})
 
     store.register("schedule", schedule)
     store.register("stops", stops)
@@ -154,7 +163,6 @@ def update_arrivals(store: duckdb.DuckDBPyConnection, sqlite_path: str, feeds_ro
     finally:
         for name in ("schedule", "stops", "todo_days", "processed"):
             store.unregister(name)
-    return todo
 
 
 def load_arrivals(store: duckdb.DuckDBPyConnection) -> pd.DataFrame:

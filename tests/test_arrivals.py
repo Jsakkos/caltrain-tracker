@@ -155,3 +155,16 @@ def test_days_without_a_schedule_wait_for_one(env):
     make_feed(env["feeds"], name="v0", version="0", start="20250101", end="20251231")
     assert run(env) == [date(2025, 6, 4)]
     assert len(load_arrivals(env["store"])) == 1
+
+
+def test_batched_days_match_a_single_pass(env, tmp_path):
+    for day in ("2026-03-04", "2026-03-05", "2026-03-06"):
+        add_pings(env["conn"], ping("101", SF[0], AT_SF, f"{day} 08:03:00"),
+                  ping("101", TWENTY_SECOND[0], AT_22ND, f"{day} 08:09:30"))
+    run(env)
+    single = load_arrivals(env["store"])
+
+    batched_store = open_store(str(tmp_path / "b.duckdb"))
+    days = update_arrivals(batched_store, str(env["db"]), env["feeds"], today=LATER, batch_days=1)
+    assert len(days) == 3
+    pd.testing.assert_frame_equal(load_arrivals(batched_store), single)
