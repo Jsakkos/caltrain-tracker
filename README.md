@@ -117,7 +117,7 @@ Evening commute hours were defined as 3:30-7:30 pm.
 
 ## Scoring rules and parity
 
-The build reproduces the legacy pandas flow exactly, including its quirks: GTFS times past 24:00 are wrapped onto the ping's own date, and the two plots weight arrivals by ping count. The rules are listed in `docs/superpowers/plans/2026-10-03-duckdb-build.md`. To check a change against a known-good output directory, run `python scripts/compare_outputs.py OLD/data NEW/data`.
+The build reproduces the legacy pandas flow, including its quirks (the two plots weight arrivals by ping count), with one deliberate fix: arrivals are grouped by GTFS service date, and a call at 24:10 on day D is scored at 00:10 on D+1. Pings in the small hours go to whichever day's trip (that date's or the previous one's) is scheduled closest in time. The legacy flow wrapped such times onto the ping's own date, so they were scored about 24 hours off and the outlier clamp turned them into "On Time". The rules are listed in `docs/superpowers/plans/2026-10-03-duckdb-build.md`. To check a change against a known-good output directory, run `python scripts/compare_outputs.py OLD/data NEW/data`.
 
 ## Dependency pinning
 
