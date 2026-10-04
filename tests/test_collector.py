@@ -1,4 +1,6 @@
-from src.collector import parse_vehicles, to_local_text
+import threading
+
+from src.collector import connect, parse_vehicles, run_forever, run_once, save, to_local_text
 
 
 def activity(vehicle="168", recorded="2026-09-14T04:07:49Z", lat="37.5", lon="-122.3",
@@ -54,8 +56,6 @@ def test_no_vehicles_overnight():
     assert parse_vehicles(empty) == []
 
 
-from src.collector import connect, save
-
 ROW = ("168", "70012", 37.5, -122.3, "2026-09-14 21:07:49.000000")
 
 
@@ -78,3 +78,25 @@ def test_connect_keeps_existing_table_and_rows(tmp_path):
     assert connect(path).execute("select trip_id, timestamp from train_locations").fetchall() == [
         ("168", "2026-09-14 21:07:49.000000")
     ]
+
+
+def test_run_once_saves_fetched_rows(tmp_path):
+    conn = connect(str(tmp_path / "t.db"))
+    assert run_once(conn, lambda: payload(activity(), activity(vehicle="170"))) == 2
+
+
+def test_run_forever_survives_fetch_errors_and_stops(tmp_path):
+    conn = connect(str(tmp_path / "t.db"))
+    stop = threading.Event()
+    calls = []
+
+    def flaky():
+        calls.append(1)
+        if len(calls) == 1:
+            raise OSError("HTTP Error 429: Too Many Requests")
+        stop.set()
+        return payload(activity())
+
+    run_forever(conn, flaky, stop, interval=0)
+    assert len(calls) == 2
+    assert conn.execute("select count(*) from train_locations").fetchone()[0] == 1
