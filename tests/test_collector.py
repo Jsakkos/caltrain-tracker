@@ -52,3 +52,29 @@ def test_skips_malformed_activity_and_keeps_the_rest():
 def test_no_vehicles_overnight():
     empty = {"Siri": {"ServiceDelivery": {"VehicleMonitoringDelivery": {}}}}
     assert parse_vehicles(empty) == []
+
+
+from src.collector import connect, save
+
+ROW = ("168", "70012", 37.5, -122.3, "2026-09-14 21:07:49.000000")
+
+
+def test_save_inserts_and_counts(tmp_path):
+    conn = connect(str(tmp_path / "t.db"))
+    assert save(conn, [ROW, ROW[:4] + ("2026-09-14 21:08:49.000000",)]) == 2
+    assert conn.execute("select count(*) from train_locations").fetchone()[0] == 2
+
+
+def test_save_ignores_duplicates(tmp_path):
+    conn = connect(str(tmp_path / "t.db"))
+    save(conn, [ROW])
+    assert save(conn, [ROW]) == 0
+    assert conn.execute("select count(*) from train_locations").fetchone()[0] == 1
+
+
+def test_connect_keeps_existing_table_and_rows(tmp_path):
+    path = str(tmp_path / "t.db")
+    save(connect(path), [ROW])
+    assert connect(path).execute("select trip_id, timestamp from train_locations").fetchall() == [
+        ("168", "2026-09-14 21:07:49.000000")
+    ]
