@@ -15,10 +15,10 @@
 Measured from `src/flows/data_processing.py`:
 
 1. **Join keys are strings.** `train_locations.stop_id` contains `'unknown'`, so the legacy `astype(int)` fails and everything falls back to `str`. Join pings ↔ schedule on `(date, trip_id, stop_id)` and ↔ stops on `stop_id` as text. Stops are filtered to numeric `stop_id`.
-2. **`date` = the ping's calendar date** (local wall time as stored).
+2. **`date` = the GTFS service date** (changed in Task 2.6 of the slimdown plan; legacy used the ping's calendar date, local wall time as stored). Each ping is assigned to its own calendar date's trips or the previous date's, whichever puts the scheduled call closest in time; the day before a ping date only counts when that date has pings before 04:00. The arrivals table, daily stats and incidents all use this date.
 3. **Distance** = haversine with R = 6,371,000 m in the `atan2` form.
-4. **Arrival** = the ping with minimum distance per `(trip_id, stop_id, date)`; ties go to the earliest row (`id` order, since `groupby().first()` keeps `SELECT *` order).
-5. **Scheduled time** = `date + normalize_time(arrival_time)`, where hours ≥ 24 wrap to `hour % 24` on the *same* date (a known bug, kept for parity).
+4. **Arrival** = the ping with minimum distance per `(trip_id, stop_id, date)` (service date); ties go to the earliest row (`id` order, since `groupby().first()` keeps `SELECT *` order).
+5. **Scheduled time** = `service date + arrival_time` as a real timestamp, so `24:10:00` on D is 00:10 on D+1. *Changed from legacy* (Task 2.6 of the slimdown plan), which wrapped hours ≥ 24 to `hour % 24` on the ping's own date, scoring those calls ~24 h off and letting the outlier clamp turn them into "On Time". `arrival_time` is stored as the GTFS text (hour zero-padded, not wrapped). Measured on the 2026-10-03 snapshot: 53 of 701k arrivals move day and 253 change values, one changes severity; the effect is small because the collector records almost nothing between 00:01 and 03:00.
 6. **Delay** = `(actual - scheduled)` in minutes; then `> 500 → 0`, `< -100 → 0`; then `is_delayed = delay > 4`, severity `Major` if > 15, `Minor` if > 4, else `On Time`; then `< 0 → 0`.
 7. **Commute period** from the actual arrival: weekend (Sat/Sun) → `Weekend`; `06:00:00 ≤ t ≤ 09:00:00` → `Morning`; `15:30:00 ≤ t ≤ 19:30:00` → `Evening`; else `Other`. `hour` = actual arrival hour.
 8. **Ping weighting in plots.** Legacy `processed_df` has one row *per matched ping* (a fan-out merge), the dashboard JSON and incidents deduplicate to one row per arrival, but `daily_stats.html` and `commute_delays.html` do **not**, so they're weighted by ping count. The arrivals table stores `ping_count` so the plots can reproduce this exactly.
@@ -50,7 +50,7 @@ Run the legacy flow with Prefect decorators stubbed (identity functions) and `ST
 Tests (each a separate function in `tests/test_arrivals.py`):
 - closest ping wins; tie on distance → lower `id` wins
 - delay, severity boundaries at 4/15 minutes, negative delay clamped to 0 but severity `On Time`, `> 500` → 0
-- 24:xx schedule wraps to the same date (legacy behaviour)
+- 24:xx schedule wraps to the same date (legacy behaviour; replaced in Task 2.6 by service-day scoring tests)
 - commute periods incl. the 09:00:00 inclusive edge and weekends
 - `'unknown'` stop pings are ignored, not an error
 - `ping_count` = matched pings for that arrival

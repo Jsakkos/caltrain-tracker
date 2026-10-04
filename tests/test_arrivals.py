@@ -216,3 +216,15 @@ def test_batched_days_match_a_single_pass(env, tmp_path):
     days = update_arrivals(batched_store, str(env["db"]), env["feeds"], today=LATER, batch_days=1)
     assert len(days) == 3
     pd.testing.assert_frame_equal(load_arrivals(batched_store), single)
+
+
+def test_arrival_time_hour_is_zero_padded(tmp_path):
+    # Some feeds write single-digit hours; past-24 hours are kept as GTFS writes them.
+    feeds = tmp_path / "feeds"
+    make_feed(feeds, calls=[("101", SF[0], "8:00:00")])
+    env = {"feeds": feeds, "db": tmp_path / "t.db", "store": open_store(str(tmp_path / "a.duckdb"))}
+    add_pings(make_db(env["db"]), ping("101", SF[0], AT_SF, f"{DAY} 08:03:00"))
+    run(env)
+    row = one(env, "101", SF[0])
+    assert row.arrival_time == "08:00:00"
+    assert row.delay_minutes == pytest.approx(3.0)

@@ -89,7 +89,7 @@ cleaned AS (
     FROM scored
 )
 SELECT date, trip_id, stop_id, stop_name, parent_station,
-       arrival_time,
+       lpad(split_part(arrival_time, ':', 1), 2, '0') || substr(arrival_time, strpos(arrival_time, ':')) AS arrival_time,
        ts AS actual_arrival_time,
        greatest(delay, 0.0) AS delay_minutes,
        delay > 4 AS is_delayed,
