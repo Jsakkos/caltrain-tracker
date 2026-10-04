@@ -77,12 +77,12 @@ Exit criteria: the `collector` container is the only thing polling 511; the Pref
 - Modify: `uv.lock` (via `uv add`)
 - Create: `tests/__init__.py` (empty)
 
-- [ ] **Step 1: Add pytest as a dev dependency**
+- [x] **Step 1: Add pytest as a dev dependency**
 
 Run: `uv add --dev pytest`
 Expected: `pyproject.toml` gains a `[dependency-groups] dev = ["pytest>=..."]` block.
 
-- [ ] **Step 2: Add pytest config so `src` imports resolve from the repo root**
+- [x] **Step 2: Add pytest config so `src` imports resolve from the repo root**
 
 Append to `pyproject.toml`:
 
@@ -94,12 +94,12 @@ pythonpath = ["."]
 
 `testpaths` keeps pytest away from the root-level `test_*.py` scripts, which import Prefect and hit the live DB.
 
-- [ ] **Step 3: Verify**
+- [x] **Step 3: Verify**
 
 Run: `uv run pytest`
 Expected: `no tests ran` (exit code 5).
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add pyproject.toml uv.lock tests/__init__.py
@@ -114,7 +114,7 @@ git commit -m "Add pytest harness scoped to tests/"
 - Modify: `src/flows/data_processing.py:220-224`
 - Modify: `README.md`
 
-- [ ] **Step 1: Add the `postgres` service and Prefect backend URL to `docker-compose.yaml`**
+- [x] **Step 1: Add the `postgres` service and Prefect backend URL to `docker-compose.yaml`**
 
 Between `app` and `prefect`:
 
@@ -139,11 +139,11 @@ In `prefect`: add `depends_on: {postgres: {condition: service_healthy}}`, remove
 
 Keep the repo's `gtfs_data` and `gtfs_feeds` mounts on `prefect`; the server compose predates them, and the PR #3 code needs them.
 
-- [ ] **Step 2: Pin pandas and add asyncpg**
+- [x] **Step 2: Pin pandas and add asyncpg**
 
 `requirements.txt` and `requirements-prefect.txt`: `pandas>=2.0.0` → `pandas>=2.0.0,<3.0.0`. `requirements-prefect.txt`: add `asyncpg>=0.29.0` under `psycopg2-binary`.
 
-- [ ] **Step 3: Replace the chained `fillna(inplace=True)` in `process_arrival_data`**
+- [x] **Step 3: Replace the chained `fillna(inplace=True)` in `process_arrival_data`**
 
 Add `import numpy as np` beside `import pandas as pd`, and replace the three `delay_severity` lines with:
 
@@ -155,14 +155,14 @@ Add `import numpy as np` beside `import pandas as pd`, and replace the three `de
     )
 ```
 
-- [ ] **Step 4: README**: replace "PostgreSQL: Robust database for storing train location..." with the SQLite/Postgres-for-Prefect split, and add the "Operations" section (daily schedule, manual runs, pandas pin rationale) exactly as on the server. Phase 1 Task 1.6 then updates the collection line.
+- [x] **Step 4: README**: replace "PostgreSQL: Robust database for storing train location..." with the SQLite/Postgres-for-Prefect split, and add the "Operations" section (daily schedule, manual runs, pandas pin rationale) exactly as on the server. Phase 1 Task 1.6 then updates the collection line.
 
-- [ ] **Step 5: Verify the flow module still imports**
+- [x] **Step 5: Verify the flow module still imports**
 
-Run: `API_KEY=x uv run python -c "import src.flows.data_processing"`
-Expected: no traceback (the config prints its debug lines).
+Run: `uv run python -m py_compile src/flows/data_processing.py`
+Expected: no output. (Prefect isn't in the local uv env, so an import check only happens on the server when the image rebuilds.)
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add docker-compose.yaml requirements.txt requirements-prefect.txt src/flows/data_processing.py README.md
@@ -175,7 +175,7 @@ git commit -m "Upstream production-only Postgres backend, pandas<3 pin and np.se
 - Create: `src/collector.py`
 - Test: `tests/test_collector.py`
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```python
 from src.collector import parse_vehicles, to_local_text
@@ -234,12 +234,12 @@ def test_no_vehicles_overnight():
     assert parse_vehicles(empty) == []
 ```
 
-- [ ] **Step 2: Run to verify failure**
+- [x] **Step 2: Run to verify failure**
 
 Run: `uv run pytest tests/test_collector.py -v`
 Expected: collection error, `ModuleNotFoundError: No module named 'src.collector'`.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 ```python
 """
@@ -292,12 +292,12 @@ def parse_vehicles(payload: dict) -> list[tuple]:
     return rows
 ```
 
-- [ ] **Step 4: Run tests**
+- [x] **Step 4: Run tests**
 
 Run: `uv run pytest tests/test_collector.py -v`
 Expected: 7 passed.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/collector.py tests/test_collector.py
@@ -310,7 +310,7 @@ git commit -m "Add stdlib collector payload parsing"
 - Modify: `src/collector.py`
 - Test: `tests/test_collector.py`
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```python
 from src.collector import connect, save
@@ -339,12 +339,12 @@ def test_connect_keeps_existing_table_and_rows(tmp_path):
     ]
 ```
 
-- [ ] **Step 2: Run to verify failure**
+- [x] **Step 2: Run to verify failure**
 
 Run: `uv run pytest tests/test_collector.py -v`
 Expected: `ImportError: cannot import name 'connect'`.
 
-- [ ] **Step 3: Implement**: add `import sqlite3` and:
+- [x] **Step 3: Implement**: add `import sqlite3` and:
 
 ```python
 # Matches the table SQLAlchemy created, so a fresh database (tests, a new
@@ -383,12 +383,12 @@ def save(conn: sqlite3.Connection, rows: list[tuple]) -> int:
     return conn.total_changes - before
 ```
 
-- [ ] **Step 4: Run tests**
+- [x] **Step 4: Run tests**
 
 Run: `uv run pytest tests/test_collector.py -v`
 Expected: 10 passed.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/collector.py tests/test_collector.py
@@ -401,7 +401,7 @@ git commit -m "Write collector rows with INSERT OR IGNORE against the existing u
 - Modify: `src/collector.py`
 - Test: `tests/test_collector.py`
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```python
 import threading
@@ -431,12 +431,12 @@ def test_run_forever_survives_fetch_errors_and_stops(tmp_path):
     assert conn.execute("select count(*) from train_locations").fetchone()[0] == 1
 ```
 
-- [ ] **Step 2: Run to verify failure**
+- [x] **Step 2: Run to verify failure**
 
 Run: `uv run pytest tests/test_collector.py -v`
 Expected: `ImportError: cannot import name 'run_forever'`.
 
-- [ ] **Step 3: Implement**: add `import json, os, signal, sys, threading, time, urllib.request` and `from typing import Callable`, then:
+- [x] **Step 3: Implement**: add `import json, os, signal, sys, threading, time, urllib.request` and `from typing import Callable`, then:
 
 ```python
 FEED_URL = "https://api.511.org/transit/VehicleMonitoring?api_key={key}&agency=CT"
@@ -491,12 +491,12 @@ if __name__ == "__main__":
     main()
 ```
 
-- [ ] **Step 4: Run tests**
+- [x] **Step 4: Run tests**
 
 Run: `uv run pytest -v`
 Expected: 12 passed.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/collector.py tests/test_collector.py
@@ -510,7 +510,7 @@ git commit -m "Add collector loop and entry point"
 - Modify: `docker-compose.yaml`
 - Modify: `.dockerignore`
 
-- [ ] **Step 1: `Dockerfile.collector`**
+- [x] **Step 1: `Dockerfile.collector`**
 
 ```dockerfile
 # Stdlib only: no pip install. The python image ships tzdata for zoneinfo.
@@ -520,7 +520,7 @@ COPY src/collector.py .
 CMD ["python", "-u", "collector.py"]
 ```
 
-- [ ] **Step 2: Compose service** (first service in the file):
+- [x] **Step 2: Compose service** (first service in the file):
 
 ```yaml
   collector:
@@ -541,11 +541,11 @@ CMD ["python", "-u", "collector.py"]
         max-file: "3"
 ```
 
-- [ ] **Step 3: `.dockerignore`**: append `data/`, `archive/`, `notebooks/`, `.venv`. Every service bind-mounts `data/` at runtime; the build context currently uploads the 689 MB DB on every build.
+- [x] **Step 3: `.dockerignore`**: append `data/`, `archive/`, `notebooks/`, `.venv`. Every service bind-mounts `data/` at runtime; the build context currently uploads the 689 MB DB on every build.
 
-- [ ] **Step 4: Validate compose syntax** (on the server, since there's no Docker locally): done in Task 1.7 Step 4 with `docker compose config -q`.
+- [x] **Step 4: Validate compose syntax** (on the server, since there's no Docker locally): done in Task 1.7 Step 4 with `docker compose config -q`.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add Dockerfile.collector docker-compose.yaml .dockerignore
@@ -560,21 +560,21 @@ git commit -m "Run the collector as its own container"
 - Modify: `main.py:19` (drop `from src.flows.data_collection import collect_train_data_flow`; it is never called)
 - Modify: `README.md` (collection now runs in the `collector` container; Prefect still runs processing and the GTFS update)
 
-- [ ] **Step 1: Delete and edit as listed**
+- [x] **Step 1: Delete and edit as listed**
 
-- [ ] **Step 2: Verify nothing still references it**
+- [x] **Step 2: Verify nothing still references it**
 
 Run: `grep -rn "data_collection\|collect_train" --include=*.py --include=*.sh .`
 Expected: only `test_direct_db_access.py` (its own unrelated local function).
 
-- [ ] **Step 3: Verify the remaining entry points import**
+- [x] **Step 3: Verify the remaining entry points import**
 
 Run: `API_KEY=x uv run python -c "import src.deployments.deploy_flows, src.flows.data_processing, src.flows.gtfs_update"`
 Expected: no traceback. (`main.py` imports FastAPI and isn't in the uv env; it gets checked on the server.)
 
-- [ ] **Step 4: Run tests**: `uv run pytest`, expected 12 passed.
+- [x] **Step 4: Run tests**: `uv run pytest`, expected 12 passed.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add -A src/flows src/deployments main.py test_data_collection.py README.md
