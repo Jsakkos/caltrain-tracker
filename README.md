@@ -55,7 +55,7 @@ uv run pytest
 └── docker-compose.yaml      # the collector service
 ```
 
-`static/` is only partly in git. The nightly build writes `data/*.json` (stats, daily/station/train performance, heatmap, commute, weekly/monthly summaries, incidents) plus `plots/daily_stats.html` and `plots/commute_delays.html`. Those are listed in `.gitignore`, so a fresh checkout doesn't have them; run `python -m src.pipeline.build` to generate them. The rest of `static/` (`dashboard.json`, `station_stats.json`, `stations/`, and the other plots) is hand-made from `notebooks/visualizations/` and stays committed.
+`static/` is only partly in git. The nightly build writes `data/*.json` (stats, daily/station/train performance, heatmap, commute, weekly/monthly summaries, incidents) plus `plots/daily_stats.html` and `plots/commute_delay.html`. Those are listed in `.gitignore`, so a fresh checkout doesn't have them; run `python -m src.pipeline.build` to generate them. The rest of `static/` (`dashboard.json`, `station_stats.json`, `stations/`, and the other plots) is hand-made from `notebooks/visualizations/` and stays committed.
 
 # Methodology
 
