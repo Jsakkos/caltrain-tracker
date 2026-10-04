@@ -63,6 +63,7 @@ services:
       - ./gtfs_data:/app/gtfs_data  # Current schedule, refreshed by the GTFS update flow
       - ./gtfs_feeds:/app/gtfs_feeds  # Every schedule version, matched to arrivals by date
     environment:
+      - API_KEY=${API_KEY}  # src/config.py refuses to load without it
       - PREFECT_UI_URL=http://${HOST}:4200/api
       - PREFECT_API_URL=http://${HOST}:4200/api
       - PREFECT_API_DATABASE_CONNECTION_URL=postgresql+asyncpg://${DB_USER}:${DB_PASSWORD}@postgres:5432/prefect
