@@ -13,7 +13,7 @@ Tracks Caltrain on-time performance. A small collector records every train's GPS
                                                                         │
                         cron 02:00 UTC: python -m src.pipeline.build  <─┘
                           · DuckDB reads SQLite directly; arrivals kept in data/analytics.duckdb
-                          · writes static/data/*.json and static/plots/*.html
+                          · writes static/data/*.json and static/plots/{daily_stats,commute_delay}.html
                                                                         │
 cron 02:15 UTC: scripts/backup_to_nas.py      cron 02:30 UTC: scripts/export_to_website.py ──> MyWebsite (Netlify)
 ```

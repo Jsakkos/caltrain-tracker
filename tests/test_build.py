@@ -26,7 +26,8 @@ def test_build_writes_every_website_file(tmp_path):
         assert (data / name).exists(), name
     assert json.loads((data / "stats.json").read_text())["major_delay_percentage"] == 100.0
     assert [i["id"] for i in json.loads((data / "incidents.json").read_text())] == ["2026-03-04-train-101"]
-    assert (tmp_path / "static" / "plots" / "daily_stats.html").exists()
+    for name in ["daily_stats.html", "commute_delay.html"]:  # the names MyWebsite links
+        assert (tmp_path / "static" / "plots" / name).exists(), name
 
 
 def test_build_without_data_leaves_outputs_alone(tmp_path):

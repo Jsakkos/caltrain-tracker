@@ -161,6 +161,8 @@ cython_debug/
 *.sql
 data/*.db
 data/caltrain_lat_long.db
+data/analytics.duckdb
+data/analytics.duckdb.wal
 
 # Half-written GTFS feed folders (renamed into place when complete)
 gtfs_feeds/.*.partial/
