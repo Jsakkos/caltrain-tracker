@@ -26,6 +26,7 @@ WEBSITE_REPO_PATH = Path.home() / "website-deploy"
 OUTPUT_DIR = WEBSITE_REPO_PATH / "public" / "data" / "caltrain"
 SOURCE_PLOTS = PROJECT_ROOT / "static" / "plots"
 SOURCE_DATA = PROJECT_ROOT / "static" / "data"
+BUILD_PLOTS = ["daily_stats.html", "commute_delay.html"]  # written by src.pipeline.dashboard
 
 
 def ensure_output_dirs():
@@ -62,17 +63,26 @@ def export_dashboard_data():
 
 
 def export_plots():
-    """Copy Plotly HTML plots to website."""
+    """Copy the plots the nightly build writes, and remove any others from the website.
+
+    static/plots also holds plots from the retired Prefect flows that are never
+    regenerated; exporting them would publish stale charts.
+    """
     plots_dir = OUTPUT_DIR / "plots"
-    if SOURCE_PLOTS.exists():
-        count = 0
-        for plot in SOURCE_PLOTS.glob("*.html"):
-            shutil.copy(plot, plots_dir / plot.name)
+    count = 0
+    for name in BUILD_PLOTS:
+        src = SOURCE_PLOTS / name
+        if src.exists():
+            shutil.copy(src, plots_dir / name)
             count += 1
-            print(f"  - Copied {plot.name}")
-        print(f"✓ Exported {count} plot(s)")
-    else:
-        print(f"⚠ No plots directory found at {SOURCE_PLOTS}")
+            print(f"  - Copied {name}")
+        else:
+            print(f"  ⚠ Missing {name}")
+    for stale in plots_dir.glob("*.html"):
+        if stale.name not in BUILD_PLOTS:
+            stale.unlink()
+            print(f"  - Removed stale {stale.name}")
+    print(f"✓ Exported {count}/{len(BUILD_PLOTS)} plot(s)")
 
 
 def export_metadata():

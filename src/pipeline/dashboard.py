@@ -61,7 +61,7 @@ def build_dashboard(arrivals: pd.DataFrame, now: datetime) -> dict[str, object]:
         "median_delay_minutes": round(float(df["delay_minutes"].median()), 2),
         "last_updated": now.isoformat(),
         "date_range": {"start": df["date"].min().strftime("%Y-%m-%d"), "end": last.strftime("%Y-%m-%d")},
-        "days_tracked": int((last - df["date"].min()).days) + 1,
+        "days_tracked": int(df["date"].nunique()),  # skips days the collector was down
         "rolling_7d_on_time": _on_time_share(df[df["date"] >= last - pd.Timedelta(days=7)]),
         "rolling_30d_on_time": _on_time_share(df[df["date"] >= last - pd.Timedelta(days=30)]),
     }

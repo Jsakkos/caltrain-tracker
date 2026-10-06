@@ -3,7 +3,7 @@
 Fail loudly if the collector has stopped writing pings.
 
 Run from cron every 15 minutes. Exits 1 when the newest row in train_locations
-is more than 10 minutes old while trains are running (05:00-01:00 Pacific).
+is more than 10 minutes old while trains are reported (05:00-24:00 Pacific).
 If HEALTHCHECK_URL is set (e.g. a healthchecks.io check), it is pinged on
 success and <url>/fail on failure, so a dead collector sends an email.
 """
@@ -21,7 +21,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 DB_PATH = BASE_DIR / "data" / "caltrain_lat_long.db"
 LOCAL_TZ = ZoneInfo("America/Los_Angeles")
 MAX_AGE = timedelta(minutes=10)
-QUIET_START, QUIET_END = time(1, 0), time(5, 0)  # no trains in service
+# 511 drops every vehicle at midnight, even trains still running, and reports none until ~05:00.
+QUIET_START, QUIET_END = time(0, 0), time(5, 0)
 
 
 def latest_ping(db_path: str) -> datetime | None:

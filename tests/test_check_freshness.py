@@ -17,7 +17,8 @@ NOW = datetime(2026, 3, 4, 12, 0)
     (None, NOW, True),                                                    # nothing collected at all
     (datetime(2026, 3, 4, 0, 40), datetime(2026, 3, 4, 3, 0), False),     # overnight: no trains
     (datetime(2026, 3, 4, 0, 40), datetime(2026, 3, 4, 5, 30), True),     # first trains are running
-    (datetime(2026, 3, 3, 23, 30), datetime(2026, 3, 4, 0, 30), True),    # late trains still running
+    (datetime(2026, 3, 3, 23, 30), datetime(2026, 3, 3, 23, 55), True),   # late trains still running
+    (datetime(2026, 3, 3, 23, 59), datetime(2026, 3, 4, 0, 30), False),   # 511 drops all trains at midnight
 ])
 def test_is_stale(latest, now, stale):
     assert is_stale(latest, now) is stale
