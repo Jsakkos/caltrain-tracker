@@ -51,7 +51,7 @@ def test_stats():
         "median_delay_minutes": 4.0,
         "last_updated": "2026-03-08T00:05:00",
         "date_range": {"start": "2026-03-02", "end": "2026-03-07"},
-        "days_tracked": 6,
+        "days_tracked": 3,  # days with arrivals, not the calendar span
         "rolling_7d_on_time": 50.0,
         "rolling_30d_on_time": 50.0,
     }
