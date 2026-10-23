@@ -190,3 +190,10 @@ static/data/summary_stats.json
 
 # Pre-rename name of the build's commute plot
 static/plots/commute_delays.html
+
+# Analysis notebooks: local data snapshots and scratch outputs (see analysis/README.md)
+analysis/data/*.duckdb
+analysis/data/*.db
+analysis/data/fig/
+analysis/data/survey*.txt
+analysis/data/exec*.log

@@ -20,8 +20,13 @@ dev = [
 ]
 notebooks = [
     "ipykernel>=7.1.0",
+    "jupyter-client>=8.7.0",
+    "jupytext>=1.19.6",
+    "matplotlib>=3.11.2",
+    "nbconvert>=7.17.2",
     "nbformat>=5.10.4",
     "polars>=1.36.1",
+    "scipy>=1.18.1",
 ]
 
 [tool.pytest.ini_options]
