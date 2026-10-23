@@ -29,7 +29,7 @@ recover two or more minutes, and 0.3% get back under the 4-minute threshold.
 later; 55% worsen); southbound Express is the only group with any recovery (27%, but n = 15).
 
 **Caveats.** The destination stop is never observed, so "the end of the line" is the
-penultimate stop. Schedule slack exists (see #8) but is ~1 minute per padded segment,
+penultimate stop. Schedule slack exists (see #9) but is ~1 minute per padded segment,
 far less than a 10-minute delay. Tells you nothing about whether Caltrain *could* recover,
 only that it does not.
 
@@ -37,7 +37,47 @@ only that it does not.
 line with 25–75 and 10–90 bands; annotate "0.3% back on time". Alternative: a spaghetti
 plot of 100 random late trips, all flat or rising.
 
-## 2. The least reliable trains on the line are the northbound expresses  — S3 R5 V5
+## 2. Strikes freeze the whole railroad for an hour, wreck three hours of departures, and the expresses are what gets cut  — S3 R4 V5
+
+**Finding.** Twelve times in 380 clean days (about once every five weeks) four or more
+trains froze at the same minute with no station to stop at, for 20 to 131 minutes. Every
+one hit both directions. Trains scheduled to depart in the hour before the stop finished
+a median 48 minutes late; those departing one to two hours *after* it, 27 minutes; only
+after three hours do departures run normally. Those twelve windows hold 31% of every
+arrival more than 15 minutes late in the whole record. On the nine days with three or
+more never-run trips, 18% of scheduled Express trains and 9% of Limiteds were dropped,
+against 1% of Locals.
+
+**Evidence.** `05_network_stops`. Detector A: ≥ 10 consecutive identical positions (not
+terminal parking) for ≥ 4 trains at once, confirmed by ≥ 5 trains ≥ 15 min late in the
+next four hours (13 candidates failed that test and are sub-day feed freezes). Detector B:
+scheduled trips that never appear while the feed is alive for other trains around their
+departure. Three events match public reports: 2025-10-24 (Caltrain Alerts: major delays,
+all trains), 2026-02-03 (pedestrian fatality at Palo Alto; our hold cluster is Palo Alto),
+2026-09-02 (vehicle strike at Burlingame; our cluster is Burlingame–Hillsdale–San Bruno).
+Caltrain's own monthly reports list trespasser strikes as the largest delay cause and
+report 7–33 cancellations a month; our never-ran count finds half to two thirds of those.
+The 2025-11-06 time-distance diagram shows the mechanism in one picture: the line
+closes near Palo Alto at 15:55, within minutes trains are parked from Redwood City to
+Sunnyvale in both directions, and every train that enters the segment for the next two
+hours leaves it 60–90 minutes late.
+
+**Caveats.** The feed never says *why* the line stopped; "strike" is inferred from the
+shape and from the three reported cases. Bad-feed days are excluded, so incidents on
+those days are invisible, and a stop that holds trains at the terminals is not detected.
+"Never ran" cannot see trains terminated mid-run, and some cancellation clusters (Nov
+18–19 2025, the same expresses two days running) look like equipment shortages rather
+than incidents. Caltrain counts lateness at the final stop; we count it at the
+penultimate one, so our late-train totals run higher than theirs.
+
+**Visual.** The time-distance (Marey) diagram of one day, every train a line coloured by
+delay, the frozen window shaded. Then the ripple chart: end-of-trip delay against
+departure time relative to the stop, showing the three-hour shadow. A small table of the
+twelve events (date, where, how long, trains hit, cancelled, hours to normal) and a bar of
+cancellation rate by service type complete it. This is also the natural static frame of an
+animation (below).
+
+## 3. The least reliable trains on the line are the northbound expresses  — S3 R5 V5
 
 **Finding.** Train 523 (17:22 Express NB) arrives more than four minutes late at 22nd
 Street on half its runs; 511 (08:22 Express NB) on 37%. Express NB is late 16% of the
@@ -50,12 +90,12 @@ and direction so time of day is not the confounder.
 
 **Caveats.** "Last observed stop" for SF-bound trains is 22nd Street, which is also where
 NB delay peaks (#4), so the ranking partly measures the SF approach. The mechanism is in
-#3: an express cannot overtake the local ~10 minutes ahead of it.
+#4: an express cannot overtake the local ~10 minutes ahead of it.
 
 **Visual.** Horizontal bar league table (top/bottom 10) coloured by service type with
 error bars; or a grouped bar of late share by service × direction × peak.
 
-## 3. Knock-on delay is gated by headway, and expresses inherit the local ahead  — S3 R5 V5
+## 4. Knock-on delay is gated by headway, and expresses inherit the local ahead  — S3 R5 V5
 
 **Finding.** When the train ahead is 10–20 minutes late at a stop, the next train is late
 88% of the time if it is scheduled ≤ 10 minutes behind, 66% at 11–20 minutes, and 34% at
@@ -73,7 +113,7 @@ any other way. Delay of the leader is measured at the same stop, so "inherits" m
 **Visual.** The 5 × 4 heatmap (leader delay × headway → % followers late) with n in each
 cell. A second panel: Express vs Local late share at 22nd St by leader state.
 
-## 4. Northbound delay is made on the final approach into San Francisco  — S4 R4 V4
+## 5. Northbound delay is made on the final approach into San Francisco  — S4 R4 V4
 
 **Finding.** The single largest time sink on the line is South San Francisco → 22nd
 Street northbound for trains that skip Bayshore: +1.3 minutes on average, and Express
@@ -95,7 +135,7 @@ queuing at the terminal cannot be separated with position data alone.
 time recovered/lost, NB and SB panels; highlight SSF → 22nd St. Or a "where trains first
 go late" mirrored bar chart (NB up, SB down).
 
-## 5. Northbound trains accumulate twice the delay of southbound, every month  — S3 R5 V4
+## 6. Northbound trains accumulate twice the delay of southbound, every month  — S3 R5 V4
 
 **Finding.** Scheduled run times are symmetric (78 min NB vs 77 min SB for a 22-stop
 local), yet at the last observed stops NB trains average 2.2 minutes late and 14% late
@@ -106,7 +146,7 @@ service types.
 per-segment accrual by hour shows NB losing time at every hour of the day while SB is
 roughly flat.
 
-**Caveats.** Part of this is #4 (the SF approach) and part is that NB trains run through
+**Caveats.** Part of this is #5 (the SF approach) and part is that NB trains run through
 the peak-direction crowding in the morning. The after-midnight and SF-terminal arrivals,
 which would add SB evening lateness, are unobservable, so the asymmetry may be slightly
 overstated.
@@ -114,7 +154,7 @@ overstated.
 **Visual.** Two lines (NB blue, SB orange) of end-of-trip late share by month; or the
 along-the-trip mean-delay curves per direction and service.
 
-## 6. Saturday is the least reliable day to ride  — S5 R3 V4
+## 7. Saturday is the least reliable day to ride  — S5 R3 V4
 
 **Finding.** Pooled, 10.7% of Saturday arrivals are late versus 6.7% on weekdays and 7.1%
 on Sundays. The typical Saturday is only slightly worse (median day 6.7% late vs 5.7%),
@@ -135,7 +175,7 @@ Weekend schedules have 66 trips, so per-hour sample sizes are a third of weekday
 with the 15% line marked; or the hour × day-of-week heatmap where Saturday afternoon
 lights up.
 
-## 7. A handful of days carry most of the severe delay, and each takes an afternoon to clear  — S2 R5 V5
+## 8. A handful of days carry most of the severe delay, and each takes an afternoon to clear  — S2 R5 V5
 
 **Finding.** The median service day has two arrivals more than 15 minutes late. Ten days
 (2.6% of days) account for a third of all such arrivals, and 38 days for two thirds. On
@@ -153,7 +193,7 @@ recovery statistic is computed on the 20 worst days only (18 had a > 50% hour).
 a calendar heatmap of daily severity with the worst days labelled. The Pareto curve is a
 good inset.
 
-## 8. The timetable's whole-minute rounding builds in a one-minute sawtooth  — S4 R3 V4
+## 9. The timetable's whole-minute rounding builds in a one-minute sawtooth  — S4 R3 V4
 
 **Finding.** Median delay by station alternates between ~+1 and ~0 minutes at adjacent
 stops. Two-minute hops (San Mateo → Hayward Park SB, Belmont → San Carlos SB, Hillsdale →
@@ -172,7 +212,7 @@ affects the 4-minute on-time measure; it is a story about timetable craft, not s
 **Visual.** Median delay vs station as a line per direction, with the 511 series dashed
 alongside so the agreement is visible; annotate the 2-minute hops.
 
-## 9. The weekday shape: two peaks, a midday trough, and the PM peak northbound is the worst hour  — S1 R5 V5
+## 10. The weekday shape: two peaks, a midday trough, and the PM peak northbound is the worst hour  — S1 R5 V5
 
 **Finding.** Late share is 2–4% at 05:00, 11% for NB at 08:00, back to 4%/2% at noon,
 and 12.5% for NB at 17:00–18:00. Southbound peaks later and lower (8.5% at 17:00, still
@@ -186,7 +226,7 @@ story and the hour × day-of-week heatmap is the single most legible chart in th
 
 **Visual.** Hour × direction line chart with intervals, or the hour × day-of-week heatmap.
 
-## 10. Hot days run late; rainy days do not  — S4 R2 V3
+## 11. Hot days run late; rainy days do not  — S4 R2 V3
 
 **Finding.** Weekdays with a maximum temperature ≥ 28 °C are late 9.0% of the time versus
 6.5% otherwise, and +1.9 points above their own month's average; days with ≥ 5 mm of
@@ -233,6 +273,15 @@ Anomaly rule ("> 50% of arrivals in the last 60 scheduled minutes late, ≥ 20 a
 catches 19 of the 20 worst days, fires on 13% of other days (mostly real short
 disruptions), typically 30–60 minutes after the incident's first late arrivals. At 70%:
 14 of 20, 2% false alarms. Details in `04_baselines`.
+
+## Next phase: animating incidents
+
+Everything a frame needs is in the dataset: one position per train per minute, the route
+projection used for the diagrams above, and the delay at each train's last observed stop.
+Notebook 05's detector gives the days worth animating and the minute to start from. The
+open questions for that phase are design ones (map vs route axis, how to show held trains
+and cancelled trips, how to mark the unknown cause), not data ones, except that ServiceAlerts
+is not collected, so the cause can only be captioned by hand.
 
 ## Looked at and set aside
 

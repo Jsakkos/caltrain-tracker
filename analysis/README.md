@@ -12,6 +12,7 @@ ranked findings are in [`INSIGHTS.md`](INSIGHTS.md); the notebooks are the evide
 | `02_when_where_which.py` | Hour × direction × day-of-week, Saturdays, months, NB vs SB, service types, the train league table, station sawtooth, weather. |
 | `03_propagation.py` | Segment accrual map, onset stations, knock-on by headway, express sensitivity, recovery after a 10-minute delay, worst days and how long they take to clear. |
 | `04_baselines.py` | Forecast baselines on a held-out period (schedule / persistence / train history / persistence + profile / + leader) and a rolling-hour anomaly rule. |
+| `05_network_stops.py` | Detects network stops (many trains frozen at once) and never-run trips, checks them against reported incidents and Caltrain's monthly totals, measures the ripple, and draws time-distance diagrams of incident days. |
 
 Notebooks are stored as jupytext "percent" scripts (`.py`) with the executed `.ipynb`
 alongside. To rerun:

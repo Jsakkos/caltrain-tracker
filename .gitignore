@@ -197,3 +197,5 @@ analysis/data/*.db
 analysis/data/fig/
 analysis/data/survey*.txt
 analysis/data/exec*.log
+analysis/data/*.csv
+analysis/data/nb05_outputs.txt
