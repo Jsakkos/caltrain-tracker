@@ -37,11 +37,18 @@ COLUMNS = ["date", "t_start", "t_end", "hold_minutes", "max_trains", "held_near"
 
 _TERMINAL_TEST = " OR ".join(f"nearest ILIKE '{name}%'" for name in TERMINALS)
 
+# The pings the analysis reads: positioned trains only, as in analysis/build_dataset.py
+# (no 'unknown' stop, no foreign-vehicle ids).
+PINGS_SQL = """
+CREATE OR REPLACE TEMP VIEW ns_pings AS
+SELECT * FROM pings WHERE stop_id <> 'unknown' AND length(trip_id) <= 3
+"""
+
 STOPS_RUN_SQL = f"""
 CREATE OR REPLACE TEMP VIEW ns_stops_run AS
 WITH p AS (
     SELECT p.*, lag(lat) OVER w AS plat, lag(lon) OVER w AS plon
-    FROM pings p JOIN feed_days d USING (date)
+    FROM ns_pings p JOIN feed_days d USING (date)
     WHERE NOT d.bad_feed AND hour(ts) BETWEEN 4 AND 23 AND lat > 1
     WINDOW w AS (PARTITION BY trip_id, date ORDER BY ts)
 ),
@@ -55,7 +62,7 @@ dd AS (
     SELECT r.*, s.stop_name,
            6371000 * 2 * asin(sqrt(power(sin(radians(s.stop_lat - r.lat) / 2), 2)
                + cos(radians(r.lat)) * cos(radians(s.stop_lat)) * power(sin(radians(s.stop_lon - r.lon) / 2), 2))) AS dist
-    FROM runs r, stops s
+    FROM runs r, ns_stops s
 ),
 near AS (
     SELECT trip_id, date, grp, t0, t1, n, lat, lon, stop_name AS nearest, dist AS dist_station
@@ -94,11 +101,11 @@ WITH missing AS (
     FROM scheduled_trips s
     JOIN feed_days d USING (date)
     WHERE NOT d.bad_feed
-      AND NOT EXISTS (SELECT 1 FROM pings p WHERE p.date = s.date AND p.trip_id = s.trip_id)
+      AND NOT EXISTS (SELECT 1 FROM ns_pings p WHERE p.date = s.date AND p.trip_id = s.trip_id)
 ),
 alive AS (
     SELECT date, date_trunc('minute', ts) AS m, count(*) AS k
-    FROM pings WHERE date IN (SELECT date FROM missing) GROUP BY 1, 2
+    FROM ns_pings WHERE date IN (SELECT date FROM missing) GROUP BY 1, 2
 )
 SELECT m.date, m.trip_id, m.route_id, m.dep_ts
 FROM missing m JOIN alive f ON f.date = m.date
@@ -146,6 +153,14 @@ def never_ran(con: duckdb.DuckDBPyConnection) -> pd.DataFrame:
     departure and ``NEVER_RAN_AFTER_ALIVE`` of the ``NEVER_RAN_AFTER_MIN`` after to
     have pings from any train, which rules out collector gaps and late starts.
     """
+    con.execute(PINGS_SQL)
+    try:
+        return _never_ran(con)
+    finally:
+        con.execute("DROP VIEW IF EXISTS ns_pings")
+
+
+def _never_ran(con: duckdb.DuckDBPyConnection) -> pd.DataFrame:
     return con.execute(NEVER_RAN_SQL).df()
 
 
@@ -157,20 +172,19 @@ def detect_network_stops(con: duckdb.DuckDBPyConnection, stops: pd.DataFrame) ->
     ran 15+ minutes late. ``hours_to_normal`` is None when no later hour got back
     under the normal late share.
     """
-    con.register("stops", stops)
+    con.register("ns_stops", stops)
     try:
+        con.execute(PINGS_SQL)
         con.execute(STOPS_RUN_SQL)
         con.execute(STOP_MINUTES_SQL)
         candidates = con.execute(CANDIDATES_SQL).df()
-        if candidates.empty:
-            return pd.DataFrame({c: pd.Series(dtype=object) for c in COLUMNS})
         con.register("ns_candidates", candidates)
-        con.register("ns_cancelled", never_ran(con))
+        con.register("ns_cancelled", _never_ran(con))
         events = con.execute(EVENTS_SQL).df()
     finally:
-        for view in ("ns_stop_min", "ns_stops_run"):
+        for view in ("ns_stop_min", "ns_stops_run", "ns_pings"):
             con.execute(f"DROP VIEW IF EXISTS {view}")
-        for name in ("ns_candidates", "ns_cancelled", "stops"):
+        for name in ("ns_candidates", "ns_cancelled", "ns_stops"):
             con.unregister(name)
 
     events["held_near"] = events.held_near.map(_station_name)

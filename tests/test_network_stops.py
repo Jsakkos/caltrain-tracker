@@ -38,10 +38,10 @@ def con():
     return c
 
 
-def add_pings(con, trip, where, start, minutes, day=DAY, moving=False):
+def add_pings(con, trip, where, start, minutes, day=DAY, moving=False, stop_id="x"):
     t0 = at(day, start)
     step = 1e-4 if moving else 0.0
-    rows = [(trip, "x", where[0] + i * step, where[1], t0 + timedelta(minutes=i), day) for i in range(minutes)]
+    rows = [(trip, stop_id, where[0] + i * step, where[1], t0 + timedelta(minutes=i), day) for i in range(minutes)]
     nid = con.execute("SELECT coalesce(max(id), 0) FROM pings").fetchone()[0]
     con.executemany("INSERT INTO pings VALUES (?, ?, ?, ?, ?, ?, ?)",
                     [(nid + i + 1, *r) for i, r in enumerate(rows)])
@@ -142,8 +142,9 @@ def test_cancelled_trips_after_the_stop_are_counted(con):
 def test_stops_frame_is_unregistered_afterwards(con):
     freeze_four_trains(con)
     detect_network_stops(con, STOPS)
-    with pytest.raises(duckdb.Error):
-        con.execute("SELECT * FROM stops")
+    for name in ("stops", "ns_stops", "ns_pings", "ns_stops_run"):
+        with pytest.raises(duckdb.Error):
+            con.execute(f"SELECT * FROM {name}")
 
 
 def test_never_ran_needs_a_live_feed(con):
@@ -169,3 +170,32 @@ def test_never_ran_skips_bad_feed_days(con):
     con.execute(f"INSERT INTO scheduled_trips VALUES (DATE '{DAY}', '777', 'Express', '0', TIMESTAMP '{DAY} 17:00:00', 20)")
 
     assert never_ran(con).empty
+
+
+def test_never_ran_ignores_pings_without_a_stop_or_from_foreign_vehicles(con):
+    add_pings(con, "900", (37.5, -122.2), "15:00", 240, moving=True)
+    # the only pings for 777 have no stop; 'ABCDE' is a foreign vehicle id
+    add_pings(con, "777", (37.5, -122.2), "16:00", 30, moving=True, stop_id="unknown")
+    con.execute(f"INSERT INTO scheduled_trips VALUES (DATE '{DAY}', '777', 'Express', '0', TIMESTAMP '{DAY} 17:00:00', 20)")
+    assert never_ran(con).trip_id.tolist() == ["777"]
+
+    # foreign-vehicle pings do not keep a dead feed "alive"
+    con.execute("DELETE FROM pings WHERE trip_id = '900'")
+    add_pings(con, "ABCDE", (37.5, -122.2), "15:00", 240, moving=True)
+    assert never_ran(con).empty
+
+
+def test_empty_result_has_the_same_dtypes_as_a_full_one(con):
+    empty = detect_network_stops(con, STOPS)
+    assert empty.empty and list(empty.columns) == list(detect_network_stops_columns())
+
+    freeze_four_trains(con)
+    for n in range(5):
+        add_clean(con, f"20{n}", "17:30", 30.0)
+    full = detect_network_stops(con, STOPS)
+    assert (empty.dtypes == full.dtypes).all(), (empty.dtypes, full.dtypes)
+
+
+def detect_network_stops_columns():
+    from src.pipeline.network_stops import COLUMNS
+    return COLUMNS
