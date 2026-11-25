@@ -4,7 +4,7 @@ import duckdb
 import pandas as pd
 import pytest
 
-from src.pipeline.network_stops import detect_network_stops, never_ran
+from src.pipeline.network_stops import caltrain_platforms, detect_network_stops, never_ran
 
 DAY = "2026-03-04"
 PALO_ALTO = (37.4439, -122.1650)
@@ -13,12 +13,29 @@ SF = (37.7764, -122.3948)
 NEAR_SF = (37.7771, -122.3948)  # ~80 m from the platform
 
 STOPS = pd.DataFrame({
-    "stop_id": [70222, 70011],
-    "stop_name": ["Palo Alto Caltrain Station Northbound", "San Francisco Caltrain Station"],
-    "parent_station": [22, 11],
+    "stop_id": ["70171", "70011"],
+    "stop_name": ["Palo Alto Caltrain Station Northbound", "San Francisco Caltrain Station Northbound"],
+    "parent_station": ["palo_alto", "san_francisco"],
     "stop_lat": [PALO_ALTO[0], SF[0]],
     "stop_lon": [PALO_ALTO[1], SF[1]],
 })
+
+# Real coordinates from the GTFS feeds: both Palo Alto platforms, Menlo Park, the two
+# San Jose Diridon platforms, and the numeric-id "San Jose Shuttle" stop ~140 m from them.
+PA_NB, PA_SB = (37.44344, -122.16466), (37.44340, -122.16470)
+MENLO_PARK = (37.45486, -122.18230)
+DIRIDON_NB, DIRIDON_SB = (37.32924, -121.90301), (37.32923, -121.90317)
+SJ_SHUTTLE = (37.330196, -121.901985)
+REAL_STOPS = pd.DataFrame([
+    ("70171", "Palo Alto Caltrain Station Northbound", "palo_alto", *PA_NB),
+    ("70172", "Palo Alto Caltrain Station Southbound", "palo_alto", *PA_SB),
+    ("70161", "Menlo Park Caltrain Station Northbound", "menlo_park", *MENLO_PARK),
+    ("70261", "San Jose Diridon Caltrain Station Northbound", "sj_diridon", *DIRIDON_NB),
+    ("70262", "San Jose Diridon Caltrain Station Southbound", "sj_diridon", *DIRIDON_SB),
+    ("777402", "San Jose Shuttle", "", *SJ_SHUTTLE),
+    ("777403", "Tamien Caltrain Station Shuttle", "", 37.311638, -121.883403),
+    ("SJD-01-STB", "Elevator: San Jose Diridon Caltrain Station Building", "sj_diridon", 37.329729, -121.902643),
+], columns=["stop_id", "stop_name", "parent_station", "stop_lat", "stop_lon"])
 
 
 def at(day, hhmm):
@@ -199,3 +216,122 @@ def test_empty_result_has_the_same_dtypes_as_a_full_one(con):
 def detect_network_stops_columns():
     from src.pipeline.network_stops import COLUMNS
     return COLUMNS
+
+
+def make_late(con, n=5):
+    for i in range(n):
+        add_clean(con, f"20{i}", "17:30", 30.0)
+
+
+def hold(con, trip, where, start="15:55", minutes=20, split=False):
+    """A train frozen for ``minutes``; ``split`` nudges it once halfway, making two stationary runs."""
+    if not split:
+        add_pings(con, trip, where, start, minutes)
+        return
+    half = minutes // 2
+    add_pings(con, trip, where, start, half)
+    t = (at(DAY, start) + timedelta(minutes=half)).strftime("%H:%M")
+    add_pings(con, trip, (where[0] + 1e-5, where[1]), t, minutes - half)
+
+
+def test_caltrain_platforms_keeps_only_numeric_caltrain_platforms():
+    kept = caltrain_platforms(REAL_STOPS)
+    assert kept["stop_id"].tolist() == ["70171", "70172", "70161", "70261", "70262"]
+
+
+def test_held_near_ranks_stations_by_trains_not_stationary_runs(con):
+    # Menlo Park: 2 trains, each split into 2 runs (4 runs). Palo Alto: 3 trains, 1 run each.
+    for n in range(2):
+        hold(con, f"10{n}", MENLO_PARK, minutes=20, split=True)
+    for n in range(3):
+        hold(con, f"11{n}", PA_NB)
+    make_late(con)
+
+    out = detect_network_stops(con, REAL_STOPS)
+
+    assert len(out) == 1 and out.iloc[0].held_near == "Palo Alto"
+
+
+def test_held_near_ties_on_trains_go_to_more_train_minutes(con):
+    # 2 trains each; Palo Alto has more stationary runs, Menlo Park more held minutes.
+    for n in range(2):
+        hold(con, f"10{n}", PA_NB, minutes=20, split=True)
+        hold(con, f"11{n}", MENLO_PARK, minutes=30)
+    make_late(con)
+
+    out = detect_network_stops(con, REAL_STOPS)
+
+    assert len(out) == 1 and out.iloc[0].held_near == "Menlo Park"
+
+
+def test_held_near_ties_on_trains_and_minutes_go_to_the_first_name(con):
+    # Same trains and train-minutes at both; Palo Alto has more stationary runs.
+    for n in range(2):
+        hold(con, f"10{n}", PA_NB, minutes=20, split=True)
+        hold(con, f"11{n}", MENLO_PARK, minutes=20)
+    make_late(con)
+
+    out = detect_network_stops(con, REAL_STOPS)
+
+    assert len(out) == 1 and out.iloc[0].held_near == "Menlo Park"
+
+
+def test_held_near_counts_both_platforms_of_a_station_together(con):
+    # Palo Alto: 2 trains on each platform (4); Menlo Park: 3 trains on its one platform.
+    for n in range(2):
+        hold(con, f"10{n}", PA_NB)
+        hold(con, f"11{n}", PA_SB)
+    for n in range(3):
+        hold(con, f"12{n}", MENLO_PARK)
+    make_late(con)
+
+    out = detect_network_stops(con, REAL_STOPS)
+
+    assert len(out) == 1 and out.iloc[0].held_near == "Palo Alto"
+
+
+def test_held_near_is_the_same_whatever_the_ping_order(con):
+    for n in range(2):
+        hold(con, f"10{n}", PA_NB, minutes=20, split=True)
+        hold(con, f"11{n}", MENLO_PARK, minutes=20)
+    make_late(con)
+    first = detect_network_stops(con, REAL_STOPS)
+    con.execute("CREATE TABLE shuffled AS SELECT * FROM pings ORDER BY random()")
+    con.execute("DROP TABLE pings")
+    con.execute("ALTER TABLE shuffled RENAME TO pings")
+    for _ in range(5):
+        pd.testing.assert_frame_equal(detect_network_stops(con, REAL_STOPS), first)
+
+
+def test_a_shuttle_stop_does_not_hide_trains_parked_at_a_terminal(con):
+    # Parked right on the shuttle stop, ~140 m from the Diridon platforms.
+    for n in range(4):
+        hold(con, f"10{n}", SJ_SHUTTLE)
+    make_late(con)
+
+    assert len(detect_network_stops(con, REAL_STOPS)) == 0
+
+
+def test_a_shuttle_stop_is_never_named_and_its_trains_are_not_counted(con):
+    for n in range(4):
+        hold(con, f"10{n}", SJ_SHUTTLE)
+        hold(con, f"11{n}", PA_NB)
+    make_late(con)
+
+    out = detect_network_stops(con, REAL_STOPS)
+
+    assert len(out) == 1
+    assert out.iloc[0].held_near == "Palo Alto"
+    assert out.iloc[0].max_trains == 4
+
+
+def test_given_cancellations_are_used_instead_of_recomputed(con):
+    freeze_four_trains(con)
+    make_late(con)
+    given = pd.DataFrame({"date": [pd.Timestamp(DAY)] * 2, "trip_id": ["777", "778"],
+                          "route_id": ["Express", "Express"],
+                          "dep_ts": [pd.Timestamp(at(DAY, "17:00")), pd.Timestamp(at(DAY, "17:10"))]})
+
+    out = detect_network_stops(con, STOPS, cancellations=given)
+
+    assert out.iloc[0].cancelled_after == 2  # nothing in scheduled_trips: only the given frame can say 2

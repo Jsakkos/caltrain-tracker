@@ -11,13 +11,22 @@ table). Neither leaves a record in the feed itself, but both leave fingerprints:
   * a never-ran trip is a scheduled train with no pings all day while the feed
     carried other trains around its departure.
 
+Positions are matched to Caltrain platforms only (``caltrain_platforms``): the
+feeds also carry numeric-id shuttle stops, one of them ~150 m from San Jose
+Diridon, which would otherwise hide trains parked at that terminal and be named
+as where trains were held.
+
 Reads the temp views/tables ``pings``, ``clean``, ``feed_days`` and the table
 ``scheduled_trips`` on the connection.
 """
 from __future__ import annotations
 
+import logging
+
 import duckdb
 import pandas as pd
+
+log = logging.getLogger(__name__)
 
 RUN_MIN_PINGS = 10        # identical consecutive positions that make a stationary run
 MIN_TRAINS = 4            # stationary trains in the same minute
@@ -36,6 +45,14 @@ COLUMNS = ["date", "t_start", "t_end", "hold_minutes", "max_trains", "held_near"
            "max_delay", "dirs_hit", "cancelled_after", "hours_to_normal", "is_network_stop"]
 
 _TERMINAL_TEST = " OR ".join(f"nearest ILIKE '{name}%'" for name in TERMINALS)
+
+# A Caltrain platform: numeric stop_id and a name like "Palo Alto Caltrain Station Northbound".
+# Leaves out shuttle stops ("San Jose Shuttle", "Tamien Caltrain Station Shuttle"), station
+# buildings, elevators and other agencies' stops. RE2 and Python agree on this pattern.
+PLATFORM_NAME = r" Caltrain Station (?:Northbound|Southbound)$"
+
+# The station a platform belongs to: both platforms of a station share it.
+STATION_SQL = "replace(replace(replace({col}, ' Caltrain Station', ''), ' Northbound', ''), ' Southbound', '')"
 
 # The pings the analysis reads: positioned trains only, as in analysis/build_dataset.py
 # (no 'unknown' stop, no foreign-vehicle ids).
@@ -65,7 +82,8 @@ dd AS (
     FROM runs r, ns_stops s
 ),
 near AS (
-    SELECT trip_id, date, grp, t0, t1, n, lat, lon, stop_name AS nearest, dist AS dist_station
+    SELECT trip_id, date, grp, t0, t1, n, lat, lon, stop_name AS nearest, {STATION_SQL.format(col="stop_name")} AS station,
+           dist AS dist_station
     FROM dd QUALIFY row_number() OVER (PARTITION BY trip_id, date, grp ORDER BY dist) = 1
 )
 SELECT * FROM near WHERE NOT (dist_station < {TERMINAL_RADIUS_M} AND ({_TERMINAL_TEST}))
@@ -73,7 +91,8 @@ SELECT * FROM near WHERE NOT (dist_station < {TERMINAL_RADIUS_M} AND ({_TERMINAL
 
 STOP_MINUTES_SQL = """
 CREATE OR REPLACE TEMP VIEW ns_stop_min AS
-SELECT date, trip_id, unnest(generate_series(date_trunc('minute', t0), date_trunc('minute', t1), INTERVAL 1 MINUTE)) AS m
+SELECT date, trip_id, station,
+       unnest(generate_series(date_trunc('minute', t0), date_trunc('minute', t1), INTERVAL 1 MINUTE)) AS m
 FROM ns_stops_run
 """
 
@@ -116,6 +135,15 @@ HAVING count(*) FILTER (WHERE f.m <= m.dep_ts) >= {NEVER_RAN_BEFORE_ALIVE}
 ORDER BY m.date, m.dep_ts, m.trip_id
 """
 
+# Where trains were held: the station with the most distinct trains frozen during the event,
+# then the most held train-minutes, then the first name. Deterministic by construction.
+HELD_NEAR_SQL = """
+(SELECT station FROM (
+     SELECT s.station, count(DISTINCT s.trip_id) AS trains, count(DISTINCT (s.trip_id, s.m)) AS train_minutes
+     FROM ns_stop_min s WHERE s.date = e.date AND s.m BETWEEN e.t_start AND e.t_end
+     GROUP BY s.station)
+ ORDER BY trains DESC, train_minutes DESC, station LIMIT 1)"""
+
 EVENTS_SQL = f"""
 SELECT e.date, e.t_start, e.t_end, e.hold_minutes, e.max_trains,
    (SELECT count(DISTINCT trip_id) FROM clean h
@@ -128,18 +156,17 @@ SELECT e.date, e.t_start, e.t_end, e.hold_minutes, e.max_trains,
    (SELECT min(hh) FROM (SELECT date_trunc('hour', sched_ts) AS hh, avg(late4::INT) AS l
                          FROM clean h WHERE h.date = e.date AND h.sched_ts > e.t_end GROUP BY 1) x
      WHERE l < {NORMAL_LATE_SHARE}) AS first_normal_hour,
-   (SELECT mode(nearest) FROM ns_stops_run s WHERE s.date = e.date AND s.t1 >= e.t_start AND s.t0 <= e.t_end) AS held_near
+   {HELD_NEAR_SQL} AS held_near
 FROM ns_candidates e
 ORDER BY e.date, e.t_start
 """
 
 
-def _station_name(name: str | None) -> str | None:
-    if name is None:
-        return None
-    for suffix in (" Caltrain Station", " Northbound", " Southbound"):
-        name = name.replace(suffix, "")
-    return name
+def caltrain_platforms(stops: pd.DataFrame) -> pd.DataFrame:
+    """The ``load_stops`` rows that are Caltrain platforms (see ``PLATFORM_NAME``)."""
+    numeric = stops["stop_id"].astype(str).str.isnumeric()
+    platform = stops["stop_name"].astype(str).str.contains(PLATFORM_NAME, regex=True)
+    return stops[numeric & platform]
 
 
 def _none_for_nan(series: pd.Series) -> pd.Series:
@@ -164,22 +191,29 @@ def _never_ran(con: duckdb.DuckDBPyConnection) -> pd.DataFrame:
     return con.execute(NEVER_RAN_SQL).df()
 
 
-def detect_network_stops(con: duckdb.DuckDBPyConnection, stops: pd.DataFrame) -> pd.DataFrame:
+def detect_network_stops(con: duckdb.DuckDBPyConnection, stops: pd.DataFrame,
+                         cancellations: pd.DataFrame | None = None) -> pd.DataFrame:
     """One row per stretch with several trains frozen at once, with how far the ripple reached.
 
-    ``stops`` is the ``load_stops`` frame (station coordinates). ``is_network_stop``
-    separates real stops from feed freezes by whether ``CONFIRM_TRAINS`` trains then
-    ran 15+ minutes late. ``hours_to_normal`` is None when no later hour got back
+    ``stops`` is the ``load_stops`` frame (station coordinates); only its Caltrain
+    platforms are used. ``cancellations`` is the ``never_ran`` frame when the caller
+    already has it (computed here otherwise). ``is_network_stop`` separates real
+    stops from feed freezes by whether ``CONFIRM_TRAINS`` trains then ran 15+
+    minutes late. ``held_near`` is the station holding the most trains (see
+    ``HELD_NEAR_SQL``). ``hours_to_normal`` is None when no later hour got back
     under the normal late share.
     """
-    con.register("ns_stops", stops)
+    platforms = caltrain_platforms(stops)
+    if platforms.empty:
+        log.warning("No Caltrain platforms among %d stops; no network stops can be found", len(stops))
+    con.register("ns_stops", platforms)
     try:
         con.execute(PINGS_SQL)
         con.execute(STOPS_RUN_SQL)
         con.execute(STOP_MINUTES_SQL)
         candidates = con.execute(CANDIDATES_SQL).df()
         con.register("ns_candidates", candidates)
-        con.register("ns_cancelled", _never_ran(con))
+        con.register("ns_cancelled", _never_ran(con) if cancellations is None else cancellations)
         events = con.execute(EVENTS_SQL).df()
     finally:
         for view in ("ns_stop_min", "ns_stops_run", "ns_pings"):
@@ -187,7 +221,7 @@ def detect_network_stops(con: duckdb.DuckDBPyConnection, stops: pd.DataFrame) ->
         for name in ("ns_candidates", "ns_cancelled", "ns_stops"):
             con.unregister(name)
 
-    events["held_near"] = events.held_near.map(_station_name)
+    events["held_near"] = _none_for_nan(events["held_near"])
     hours = (events.first_normal_hour - events.t_start).dt.total_seconds() / 3600
     events["hours_to_normal"] = _none_for_nan(hours.round(1))
     events["max_delay"] = _none_for_nan(events.max_delay.round())
