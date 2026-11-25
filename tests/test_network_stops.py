@@ -335,3 +335,14 @@ def test_given_cancellations_are_used_instead_of_recomputed(con):
     out = detect_network_stops(con, STOPS, cancellations=given)
 
     assert out.iloc[0].cancelled_after == 2  # nothing in scheduled_trips: only the given frame can say 2
+
+
+def test_no_platforms_among_the_stops_finds_nothing_instead_of_failing(con, caplog):
+    freeze_four_trains(con)
+    make_late(con)
+    not_platforms = REAL_STOPS[REAL_STOPS["stop_name"].str.contains("Shuttle")]
+
+    out = detect_network_stops(con, not_platforms)
+
+    assert out.empty and list(out.columns) == list(detect_network_stops_columns())
+    assert "No Caltrain platforms" in caplog.text

@@ -76,7 +76,7 @@ runs AS (
     FROM g GROUP BY 1, 2, 3 HAVING count(*) >= {RUN_MIN_PINGS}
 ),
 dd AS (
-    SELECT r.*, s.stop_name,
+    SELECT r.*, CAST(s.stop_name AS VARCHAR) AS stop_name,  -- typed even when no platform is registered
            6371000 * 2 * asin(sqrt(power(sin(radians(s.stop_lat - r.lat) / 2), 2)
                + cos(radians(r.lat)) * cos(radians(s.stop_lat)) * power(sin(radians(s.stop_lon - r.lon) / 2), 2))) AS dist
     FROM runs r, ns_stops s
