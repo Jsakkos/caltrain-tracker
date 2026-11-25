@@ -135,3 +135,42 @@ def test_build_calls_the_real_stories_functions_with_matching_arguments(tmp_path
     else:
         from src.pipeline.stories import validate_stories
         validate_stories(json.loads((data / "stories.json").read_text()))
+
+
+def test_build_carries_on_without_network_stops_when_the_detector_fails(tmp_path, monkeypatch, caplog):
+    from src.pipeline.network_stops import COLUMNS
+
+    def boom(*args, **kwargs):
+        raise RuntimeError("detector broke")
+    seen = {}
+    real_build_stories = build_module.build_stories
+
+    def spy(con, events, cancellations, now):
+        seen["events"] = events
+        return real_build_stories(con, events, cancellations, now)
+    monkeypatch.setattr(build_module, "detect_network_stops", boom)
+    monkeypatch.setattr(build_module, "build_stories", spy)
+
+    _run_build(tmp_path)
+
+    data = tmp_path / "static" / "data"
+    incidents = json.loads((data / "incidents.json").read_text())
+    assert incidents and all(i["held_near"] is None for i in incidents)
+    assert list(seen["events"].columns) == COLUMNS and seen["events"].empty  # stories still ran
+    failed = [r for r in caplog.records if "network-stop step failed" in r.getMessage()]
+    assert failed and failed[0].exc_info is not None  # logged with its traceback
+
+
+def test_never_ran_is_computed_once_per_build(tmp_path, monkeypatch):
+    from src.pipeline import network_stops
+    calls = []
+    real = network_stops._never_ran
+
+    def counted(con):
+        calls.append(1)
+        return real(con)
+    monkeypatch.setattr(network_stops, "_never_ran", counted)
+
+    _run_build(tmp_path)
+
+    assert len(calls) == 1

@@ -22,7 +22,7 @@ from src.pipeline.arrivals import open_store, update_arrivals
 from src.pipeline.clean import load_clean, register_views
 from src.pipeline.dashboard import legacy_stats, write_dashboard, write_json_atomic
 from src.pipeline.incidents import detect_incidents
-from src.pipeline.network_stops import detect_network_stops, never_ran
+from src.pipeline.network_stops import COLUMNS as NETWORK_STOP_COLUMNS, detect_network_stops, never_ran
 from src.pipeline.stories import build_stories, example_day, validate_stories
 from src.utils.geo_utils import load_shape_points
 
@@ -68,11 +68,16 @@ def build(db: Path, store_path: Path, out: Path, feeds_root: Path = FEEDS_DIR,
         timings["arrivals"] = time.monotonic() - started
 
         # SQL only, so it runs before the build holds any frame: DuckDB's working memory for
-        # the ping scan and the pandas frames below are never needed at the same time.
+        # the ping scan and the pandas frames below are never needed at the same time. A failure
+        # here costs the incidents their held_near and the stories their network stops, not the build.
         started = time.monotonic()
-        stops = load_stops(feeds_root)
-        stops = stops[stops["stop_id"].str.isnumeric()]
-        network_stops = detect_network_stops(store, stops)
+        cancellations = None
+        try:
+            cancellations = never_ran(store)  # once a night: the detector and the stories share it
+            network_stops = detect_network_stops(store, load_stops(feeds_root), cancellations)
+        except Exception:
+            log.exception("network-stop step failed; carrying on without network stops")
+            network_stops = pd.DataFrame(columns=NETWORK_STOP_COLUMNS)
         timings["network_stops"] = time.monotonic() - started
 
         # One frame of clean arrivals on every day; the clean subset is its good-feed rows, and the
@@ -108,7 +113,9 @@ def build(db: Path, store_path: Path, out: Path, feeds_root: Path = FEEDS_DIR,
         # previous stories files stay exactly as they were.
         started = time.monotonic()
         try:
-            payload = build_stories(store, network_stops, never_ran(store), now)
+            if cancellations is None:
+                cancellations = never_ran(store)
+            payload = build_stories(store, network_stops, cancellations, now)
             validate_stories(payload)
             example = example_day(store, gps_loader(store), station_meta, shape, network_stops)
             # Serialise both first so a bad example payload cannot leave a new stories.json
