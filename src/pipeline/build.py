@@ -19,6 +19,7 @@ import pandas as pd
 
 from src.data.gtfs_feeds import FEEDS_DIR
 from src.pipeline.arrivals import load_arrivals, open_store, update_arrivals
+from src.pipeline.clean import load_clean, register_views
 from src.pipeline.dashboard import write_dashboard, write_json_atomic
 from src.pipeline.incidents import detect_incidents
 from src.utils.geo_utils import load_shape_points
@@ -61,21 +62,24 @@ def build(db: Path, store_path: Path, out: Path, feeds_root: Path = FEEDS_DIR,
     store = open_store(str(store_path))
     try:
         days = update_arrivals(store, str(db), feeds_root, full=full, today=now.date())
-        arrivals = load_arrivals(store)
+        register_views(store)
+        legacy = load_arrivals(store)
+        arrivals = load_clean(store)
+        daily = load_clean(store, include_bad_feed=True)
         timings["arrivals"] = time.monotonic() - started
-        log.info("Recomputed %d day(s); %d arrivals in total", len(days), len(arrivals))
+        log.info("Recomputed %d day(s); %d arrivals (%d clean) in total", len(days), len(legacy), len(arrivals))
         if arrivals.empty:
-            log.warning("No arrivals; leaving the existing website files alone")
+            log.warning("No clean arrivals; leaving the existing website files alone")
             return {"days": days, "arrivals": 0, "timings": timings}
 
         started = time.monotonic()
-        write_dashboard(out, arrivals, now)
+        write_dashboard(out, arrivals, now, legacy=legacy, daily=daily)
         timings["dashboard"] = time.monotonic() - started
 
         started = time.monotonic()
         station_meta = json.loads(Path(station_meta_path).read_text(encoding="utf-8"))["stations"]
         shape = load_shape_points(str(gtfs_dir))
-        incidents, trajectories = detect_incidents(arrivals, gps_loader(store), station_meta, shape)
+        incidents, trajectories = detect_incidents(legacy, gps_loader(store), station_meta, shape)
         write_json_atomic(Path(out) / "data" / "incidents.json", incidents, indent=2)
         write_json_atomic(Path(out) / "data" / "incident_trajectories.json", trajectories)
         timings["incidents"] = time.monotonic() - started

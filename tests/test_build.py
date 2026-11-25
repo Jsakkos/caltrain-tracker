@@ -20,11 +20,12 @@ def test_build_writes_every_website_file(tmp_path):
                    gtfs_dir=REPO / "gtfs_data", station_meta_path=REPO / "data" / "station_metadata.json",
                    now=datetime(2026, 3, 5, 0, 5))
 
-    assert result["arrivals"] == 2
+    assert result["arrivals"] == 1  # clean: the origin stop is dropped
     data = tmp_path / "static" / "data"
     for name in DASHBOARD_FILES + ["incidents.json", "incident_trajectories.json"]:
         assert (data / name).exists(), name
     assert json.loads((data / "stats.json").read_text())["major_delay_percentage"] == 100.0
+    assert json.loads((data / "stats.json").read_text())["clean"]["total_arrivals"] == 1
     assert [i["id"] for i in json.loads((data / "incidents.json").read_text())] == ["2026-03-04-train-101"]
     for name in ["daily_stats.html", "commute_delay.html"]:  # the names MyWebsite links
         assert (tmp_path / "static" / "plots" / name).exists(), name

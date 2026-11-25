@@ -1,3 +1,4 @@
+import json
 from datetime import datetime
 
 import numpy as np
@@ -23,7 +24,40 @@ def arrivals():
                                      "delay_severity", "commute_period", "hour", "ping_count"])
     df["date"] = pd.to_datetime(df["date"])
     df["is_delayed"] = df["delay_minutes"] > 4
+    df["late4"] = df["is_delayed"]
+    df["weekday"] = df["date"].dt.dayofweek < 5
+    df["stop_rank"] = 2
+    df["station"] = df["stop_name"]
+    df["service"] = "Local"
+    df["direction"] = "NB"
+    df["bad_feed"] = False
     return df
+
+
+def league_frame(runs_523=80, runs_305=10):
+    """Weekday last-stop runs: 523 is late on half of them, 305 has too few runs for the league."""
+    out = pd.DataFrame({
+        "date": [pd.Timestamp("2026-01-05") + pd.Timedelta(days=i) for trip, n in (("523", runs_523), ("305", runs_305))
+                 for i in range(n)],
+        "trip_id": [trip for trip, n in (("523", runs_523), ("305", runs_305)) for i in range(n)],
+        "late": [i % 2 == 0 for trip, n in (("523", runs_523), ("305", runs_305)) for i in range(n)],
+    })
+    out["stop_id"] = "70021"
+    out["stop_name"] = "22nd Street"
+    out["delay_minutes"] = out["late"].map({True: 6.0, False: 0.0})
+    out["delay_severity"] = out["late"].map({True: "Minor", False: "On Time"})
+    out["commute_period"] = "Morning"
+    out["hour"] = 8
+    out["ping_count"] = 1
+    out["is_delayed"] = out["late"]
+    out["late4"] = out["late"]
+    out["weekday"] = True
+    out["stop_rank"] = 3
+    out["station"] = "22nd Street"
+    out["service"] = "Local"
+    out["direction"] = "NB"
+    out["bad_feed"] = False
+    return out.drop(columns="late")
 
 
 NOW = datetime(2026, 3, 8, 0, 5)
@@ -54,7 +88,63 @@ def test_stats():
         "days_tracked": 3,  # days with arrivals, not the calendar span
         "rolling_7d_on_time": 50.0,
         "rolling_30d_on_time": 50.0,
+        "clean": {
+            "on_time_percentage": 50.0, "minor_delay_percentage": 33.33, "major_delay_percentage": 16.67,
+            "total_arrivals": 6, "avg_delay_minutes": 6.33, "median_delay_minutes": 4.0, "days_tracked": 3,
+            "bad_feed_days": 0, "rolling_7d_on_time": 50.0, "rolling_30d_on_time": 50.0,
+        },
     }
+
+
+def test_stats_clean_block_differs_from_legacy():
+    clean = arrivals().iloc[[0, 3, 4]]  # On Time, On Time, On Time
+    stats = build_dashboard(clean, NOW, legacy=arrivals())["stats.json"]
+    assert stats["on_time_percentage"] == 50.0 and stats["total_arrivals"] == 6  # legacy keys use legacy
+    assert stats["clean"] == {
+        "on_time_percentage": 100.0, "minor_delay_percentage": 0.0, "major_delay_percentage": 0.0,
+        "total_arrivals": 3, "avg_delay_minutes": 0.67, "median_delay_minutes": 0.0,
+        "days_tracked": 2, "bad_feed_days": 0, "rolling_7d_on_time": 100.0, "rolling_30d_on_time": 100.0,
+    }
+
+
+def test_daily_rows_flag_bad_feed_days():
+    clean = arrivals()
+    daily = clean.copy()
+    daily["bad_feed"] = daily["date"] == pd.Timestamp("2026-03-03")
+    out = build_dashboard(clean[clean["date"] != pd.Timestamp("2026-03-03")], NOW, daily=daily)
+    rows = {r["date"]: r for r in out["daily_performance.json"]}
+    assert [rows[d]["bad_feed"] for d in sorted(rows)] == [False, True, False]
+    assert rows["2026-03-03"]["total_trips"] == 2  # unmasked figures
+    clean_stats = out["stats.json"]["clean"]
+    assert clean_stats["bad_feed_days"] == 1
+    assert clean_stats["total_arrivals"] == 4 and clean_stats["days_tracked"] == 2
+
+
+def test_train_last_stop_columns():
+    trains = {t["trip_id"]: t for t in build_dashboard(league_frame(), NOW)["train_performance.json"]}
+    assert trains[523]["last_stop_late_pct"] == 50.0
+    assert trains[523]["last_stop_runs"] == 80
+    assert trains[523]["last_stop_name"] == "22nd Street"
+    assert trains[305]["last_stop_late_pct"] is None
+    assert trains[305]["last_stop_runs"] == 10  # counted, but too few for a late share
+
+
+def test_train_without_weekday_runs_has_zero_last_stop_runs():
+    df = league_frame()
+    df.loc[df["trip_id"] == "305", "weekday"] = False
+    trains = {t["trip_id"]: t for t in build_dashboard(df, NOW)["train_performance.json"]}
+    assert trains[305]["last_stop_runs"] == 0
+    assert trains[305]["last_stop_name"] is None
+
+
+def test_outputs_are_strict_json():
+    df = league_frame()
+    df.loc[df["trip_id"] == "305", ["weekday", "commute_period"]] = [False, "Weekend"]
+    for payload in build_dashboard(df, NOW).values():
+        json.dumps(payload, allow_nan=False)
+    empty_train = build_dashboard(df[df["trip_id"] == "523"], NOW)
+    for payload in empty_train.values():
+        json.dumps(payload, allow_nan=False)
 
 
 def test_daily_performance():
@@ -62,7 +152,7 @@ def test_daily_performance():
     assert [d["date"] for d in daily] == ["2026-03-02", "2026-03-03", "2026-03-07"]
     assert daily[0] == {"date": "2026-03-02", "total_trips": 3, "on_time_count": 1, "minor_count": 1,
                         "major_count": 1, "avg_delay_min": 8.67, "on_time_pct": 33.3, "minor_pct": 33.3,
-                        "major_pct": 33.3}
+                        "major_pct": 33.3, "bad_feed": False}
 
 
 def test_station_and_train_rankings():
@@ -72,7 +162,8 @@ def test_station_and_train_rankings():
     assert stations[0]["stop_lat"] is None  # legacy frames never carried coordinates
     trains = {t["trip_id"]: t for t in out["train_performance.json"]}
     assert trains[103] == {"trip_id": 103, "total_stops": 2, "on_time_count": 1, "avg_delay_min": 10.0,
-                           "days_observed": 2, "on_time_pct": 50.0}
+                           "days_observed": 2, "on_time_pct": 50.0, "last_stop_runs": 2,
+                           "last_stop_late_pct": None, "last_stop_name": None}
 
 
 def test_commute_heatmap_week_month():
