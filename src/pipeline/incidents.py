@@ -32,8 +32,13 @@ def _clean_station(name) -> str:
     return name.replace(" Caltrain Station", "").replace(" Northbound", "").replace(" Southbound", "")
 
 
-def _trajectories(gps: pd.DataFrame, shape_points, delayed: set[str], root_cause: str,
-                  date_major: pd.DataFrame) -> list[dict]:
+def project_trajectories(gps: pd.DataFrame, shape_points) -> list[dict]:
+    """Each train's pings as km along the route: ``[{trip_id, direction, points}]``, time order.
+
+    ``gps`` has ``trip_id, vehicle_lat, vehicle_lon, timestamp`` (datetimes). Trains
+    with fewer than three pings are dropped. ``direction`` is "SB" when the train
+    ends further from San Francisco than it started.
+    """
     gps = gps.assign(distance=(project_to_route_many(gps["vehicle_lat"], gps["vehicle_lon"], shape_points)
                                / 1000).round(2))
     out = []
@@ -43,14 +48,28 @@ def _trajectories(gps: pd.DataFrame, shape_points, delayed: set[str], root_cause
             continue
         points = [{"time": t.strftime("%H:%M:%S"), "distance": float(d)}
                   for t, d in zip(trip_gps["timestamp"], trip_gps["distance"])]
+        out.append({"trip_id": trip_id,
+                    "direction": "SB" if points[-1]["distance"] > points[0]["distance"] else "NB",
+                    "points": points})
+    return out
+
+
+def thin_points(points: list[dict]) -> list[dict]:
+    """Every fifth point plus the last, to keep the JSON small for trains nobody needs in detail."""
+    return points[::5] + [points[-1]] if len(points) > 10 else points
+
+
+def _trajectories(gps: pd.DataFrame, shape_points, delayed: set[str], root_cause: str,
+                  date_major: pd.DataFrame) -> list[dict]:
+    out = []
+    for trajectory in project_trajectories(gps, shape_points):
+        trip_id = trajectory["trip_id"]
         anomalous = trip_id in delayed
         delays = date_major.loc[date_major["trip_id"] == trip_id, "delay_minutes"]
-        if not anomalous and len(points) > 10:
-            points = points[::5] + [points[-1]]  # keep the JSON small for normal trains
         out.append({
             "trip_id": trip_id,
-            "direction": "SB" if points[-1]["distance"] > points[0]["distance"] else "NB",
-            "points": points,
+            "direction": trajectory["direction"],
+            "points": trajectory["points"] if anomalous else thin_points(trajectory["points"]),
             "is_anomalous": anomalous,
             "is_cascading": anomalous and trip_id != root_cause,
             "max_delay_min": round(float(delays.max()) if not delays.empty else 0.0, 1),
