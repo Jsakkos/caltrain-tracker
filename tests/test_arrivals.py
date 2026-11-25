@@ -5,7 +5,7 @@ import pytest
 
 import duckdb
 
-from src.pipeline.arrivals import load_arrivals, open_store, update_arrivals
+from src.pipeline.arrivals import SCHEMA, load_arrivals, open_store, update_arrivals
 from tests.pipeline_fixtures import SF, TWENTY_SECOND, add_pings, make_db, make_feed
 
 DAY = "2026-03-04"  # a Wednesday
@@ -332,3 +332,39 @@ def test_feed_without_route_columns_still_scores(tmp_path):
     row = one(env, "101", SF[0])
     assert row.route_id == "" and row.direction_id == ""
     assert row.stop_rank == 1
+
+
+def test_feed_health_per_day(env):
+    add_pings(env["conn"],
+              ping("101", SF[0], AT_SF, f"{DAY} 07:58:00"),
+              ping("101", SF[0], AT_SF, f"{DAY} 07:59:00"),
+              ping("101", SF[0], NEAR_SF, f"{DAY} 08:00:00"))
+    run(env)
+    row = env["store"].execute("SELECT * FROM feed_health WHERE date = DATE '2026-03-04'").df().iloc[0]
+    assert row.pings == 3
+    assert row.polls == 3
+    assert row.trains == 1
+    assert row.vehicles_per_poll == pytest.approx(1.0)
+    assert row.pos_change_share == pytest.approx(0.5)
+    assert row.first_ping == datetime(2026, 3, 4, 7, 58) and row.last_ping == datetime(2026, 3, 4, 8, 0)
+
+
+def test_feed_health_is_rewritten_not_duplicated(env):
+    add_pings(env["conn"], ping("101", SF[0], AT_SF, f"{DAY} 08:00:00"))
+    run(env)
+    add_pings(env["conn"], ping("101", SF[0], NEAR_SF, f"{DAY} 08:01:00"))
+    run(env, full=True)
+    rows = env["store"].execute("SELECT pings FROM feed_health WHERE date = DATE '2026-03-04'").fetchall()
+    assert rows == [(2,)]
+
+
+def test_store_missing_feed_health_is_recomputed(tmp_path):
+    path = str(tmp_path / "half.duckdb")
+    old = duckdb.connect(path)
+    old.execute(SCHEMA)
+    old.execute("DROP TABLE feed_health")
+    old.execute("INSERT INTO processed_days VALUES (DATE '2026-03-04', '1')")
+    old.close()
+    store = open_store(path)
+    assert store.execute("SELECT count(*) FROM processed_days").fetchone()[0] == 0
+    assert store.execute("SELECT count(*) FROM feed_health").fetchone()[0] == 0

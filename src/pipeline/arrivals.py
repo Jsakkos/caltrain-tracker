@@ -14,6 +14,7 @@ import duckdb
 import pandas as pd
 
 from src.data.gtfs_feeds import FEEDS_DIR, discover_feeds, feed_for_date, load_stops, schedule_for_dates
+from src.pipeline.clean import FEED_HEALTH_SQL
 
 AFTER_MIDNIGHT_HOURS = 4
 
@@ -52,6 +53,17 @@ CREATE TABLE IF NOT EXISTS scheduled_trips (
     direction_id VARCHAR,
     dep_ts TIMESTAMP,
     n_stops INTEGER
+);
+-- Per-day ping statistics; src/pipeline/clean.py decides from these which days to trust.
+CREATE TABLE IF NOT EXISTS feed_health (
+    date DATE,
+    pings BIGINT,
+    polls BIGINT,
+    vehicles_per_poll DOUBLE,
+    pos_change_share DOUBLE,
+    trains BIGINT,
+    first_ping TIMESTAMP,
+    last_ping TIMESTAMP
 );
 """
 
@@ -167,6 +179,10 @@ def _migrate(store: duckdb.DuckDBPyConnection) -> None:
     if columns and "delay_signed" not in columns:
         for table in ("arrivals", "processed_days", "scheduled_trips", "feed_health"):
             store.execute(f"DROP TABLE IF EXISTS {table}")
+    elif columns and not store.execute(
+            "SELECT 1 FROM information_schema.tables WHERE table_name = 'feed_health'").fetchone():
+        # Scored before feed health was kept: rescore, or every day would look unhealthy-by-absence.
+        store.execute("DELETE FROM processed_days")
 
 
 def attach_pings(store: duckdb.DuckDBPyConnection, sqlite_path: str) -> None:
@@ -233,6 +249,8 @@ def _score_days(store: duckdb.DuckDBPyConnection, days: list[date], version: dic
         store.execute("BEGIN")
         store.execute("DELETE FROM arrivals WHERE date IN (SELECT date FROM todo_days)")
         store.execute("DELETE FROM scheduled_trips WHERE date IN (SELECT date FROM todo_days)")
+        store.execute("DELETE FROM feed_health WHERE date IN (SELECT date FROM todo_days)")
+        store.execute(f"INSERT INTO feed_health {FEED_HEALTH_SQL}")
         if not schedule.empty:  # an empty frame has untyped columns DuckDB can't join on
             store.execute(f"INSERT INTO arrivals {ARRIVALS_SQL}")
             store.execute(f"INSERT INTO scheduled_trips {SCHEDULED_TRIPS_SQL}")

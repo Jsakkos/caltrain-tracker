@@ -5,7 +5,7 @@ Shared helpers for the analysis notebooks.
     con = connect()          # read-only DuckDB with the `clean` view registered
     df = q("select ... from clean")
 
-`clean` is the subset every notebook starts from:
+`clean` is the subset every notebook starts from (rules defined in src/pipeline/clean.py):
   * not the origin stop (the train sits at the platform; closest approach is meaningless)
   * scheduled before midnight (511 drops all vehicles at 00:00 Pacific)
   * closest ping within 1 km of the platform (positions further away are stale/garbage)
@@ -14,6 +14,7 @@ Shared helpers for the analysis notebooks.
 """
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 
 import duckdb
@@ -22,53 +23,15 @@ import pandas as pd
 HERE = Path(__file__).resolve().parent
 DB = HERE / "data" / "analysis.duckdb"
 
-# Feed-health rule: a service day is "bad" when 511's positions were stale.
-# Thresholds come from the per-day distribution (01_data_quality notebook):
-# healthy weekdays have 55-65% of consecutive pings changing position and
-# ~78% of non-origin arrivals located within 1 km of the platform.
-BAD_DAY_SQL = """
-CREATE OR REPLACE VIEW feed_days AS
-WITH loc AS (
-    SELECT date,
-           avg((dist_m < 100)::INT)  AS near100,
-           avg((dist_m < 1000)::INT) AS near1k,
-           count(*) AS arrivals
-    FROM arrivals WHERE stop_rank > 1 GROUP BY date
-)
-SELECT f.date, isodow(f.date) AS dow, isodow(f.date) <= 5 AS weekday,
-       f.pings, f.polls, f.vehicles_per_poll, f.pos_change_share, f.trains,
-       f.first_ping, f.last_ping,
-       l.near100, l.near1k, l.arrivals,
-       (f.pos_change_share < 0.45 OR l.near1k < 0.60) AS bad_feed,
-       -- partial days: collector started late or stopped early
-       (f.polls < 900 AND isodow(f.date) <= 5) OR (f.polls < 800 AND isodow(f.date) > 5) AS partial_day
-FROM feed_health f LEFT JOIN loc l USING (date)
-"""
-
-CLEAN_SQL = """
-CREATE OR REPLACE VIEW clean AS
-SELECT a.*,
-       CASE WHEN a.stop_id LIKE '%1' THEN 'NB' ELSE 'SB' END AS direction,
-       CASE WHEN a.route_id LIKE 'Local%' THEN 'Local' ELSE a.route_id END AS service,
-       isodow(a.date) AS dow, isodow(a.date) <= 5 AS weekday,
-       hour(a.sched_ts) AS sched_hour,
-       a.delay_signed > 4 AS late4, a.delay_signed > 15 AS late15,
-       replace(replace(replace(a.stop_name, ' Caltrain Station', ''), ' Northbound', ''), ' Southbound', '') AS station,
-       d.bad_feed, d.partial_day
-FROM arrivals a JOIN feed_days d USING (date)
-WHERE a.stop_rank > 1
-  AND a.arrival_time < '24:'
-  AND a.dist_m < 1000
-  AND NOT d.bad_feed
-  AND length(a.trip_id) <= 3
-"""
+# The rules live in the pipeline so the dashboard, the stories page and these notebooks agree;
+# notebooks run from analysis/, so put the repo root on the path to import it.
+sys.path.insert(0, str(HERE.parent))
+from src.pipeline.clean import register_views  # noqa: E402
 
 
 def connect(read_only: bool = True) -> duckdb.DuckDBPyConnection:
     con = duckdb.connect(str(DB), read_only=read_only)
-    # Views live in a temp schema so the file is not modified.
-    con.execute(BAD_DAY_SQL.replace("CREATE OR REPLACE VIEW", "CREATE OR REPLACE TEMP VIEW"))
-    con.execute(CLEAN_SQL.replace("CREATE OR REPLACE VIEW", "CREATE OR REPLACE TEMP VIEW"))
+    register_views(con)  # temp views, so the file is not modified
     return con
 
 
