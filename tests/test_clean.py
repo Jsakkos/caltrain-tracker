@@ -206,6 +206,17 @@ def test_league_skips_thin_trains_and_sorts_worst_first():
     assert list(league.direction) == ["NB", "SB"]
 
 
+def test_league_is_one_row_per_train_even_when_its_service_changes():
+    rows = []
+    for i, day in enumerate(weekdays(90)):
+        route = "Local Weekday" if i < 50 else "Limited"
+        rows.append(arrival(date=day, trip_id="305", stop_rank=3, delay_signed=0.0, stop_id="70022", route_id=route))
+    league = last_stop_league(load_clean(make_store(rows)))
+    assert len(league) == 1
+    assert league.iloc[0].runs == 90
+    assert league.iloc[0].service == "Local"
+
+
 def test_league_without_scheduled_trips_has_no_departure():
     league = last_stop_league(load_clean(league_store(with_trips=False)))
     assert league.departs.isna().all()

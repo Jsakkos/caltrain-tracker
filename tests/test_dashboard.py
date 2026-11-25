@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from src.pipeline.clean import last_stop_league
 from src.pipeline.dashboard import (
     DASHBOARD_FILES, build_dashboard, commute_shares, daily_severity_shares, write_dashboard, write_json_atomic,
 )
@@ -137,13 +138,29 @@ def test_train_without_weekday_runs_has_zero_last_stop_runs():
     assert trains[305]["last_stop_name"] is None
 
 
+def test_train_whose_service_changes_has_one_league_row():
+    df = league_frame()
+    df.loc[(df["trip_id"] == "523") & (df["date"] >= pd.Timestamp("2026-02-05")), "service"] = "Limited"
+    out = build_dashboard(df, NOW)["train_performance.json"]
+    row = [t for t in out if t["trip_id"] == 523][0]
+    assert row["last_stop_runs"] == 80 and row["last_stop_late_pct"] == 50.0
+    league = last_stop_league(df)
+    assert list(league["trip_id"]).count("523") == 1
+    assert league.set_index("trip_id").loc["523", "runs"] == row["last_stop_runs"]
+
+
 def test_outputs_are_strict_json():
     df = league_frame()
     df.loc[df["trip_id"] == "305", ["weekday", "commute_period"]] = [False, "Weekend"]
-    for payload in build_dashboard(df, NOW).values():
+    clean = df[df["commute_period"] != "Weekend"]  # no clean Weekend rows; 305 has no clean rows at all
+    legacy = df  # ... but it is still in the legacy frame
+    out = build_dashboard(clean, NOW, legacy=legacy, daily=df)
+    for payload in out.values():
         json.dumps(payload, allow_nan=False)
-    empty_train = build_dashboard(df[df["trip_id"] == "523"], NOW)
-    for payload in empty_train.values():
+    assert "Weekend" not in out["commute_analysis.json"]
+    assert 305 not in [t["trip_id"] for t in out["train_performance.json"]]
+    # an empty clean frame (the build skips it, but the function must still emit strict JSON)
+    for payload in build_dashboard(df.iloc[:0], NOW, legacy=legacy, daily=df).values():
         json.dumps(payload, allow_nan=False)
 
 

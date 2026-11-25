@@ -151,7 +151,9 @@ def last_stop_league(df: pd.DataFrame) -> pd.DataFrame:
 
     ``df`` is a ``load_clean`` frame. Only weekday runs count, and only trains
     with at least MIN_LEAGUE_RUNS of them. ``departs`` is the most common
-    scheduled departure ("HH:MM"), null when the frame has no ``dep_ts``.
+    scheduled departure ("HH:MM"), null when the frame has no ``dep_ts``. One row
+    per train number: ``service`` and ``direction`` are its most common values
+    (ties go to the alphabetically first).
     """
     columns = ["trip_id", "service", "direction", "departs", "runs", "late_pct", "ci_low", "ci_high", "last_stop_name"]
     runs = df[df["weekday"]]
@@ -162,14 +164,14 @@ def last_stop_league(df: pd.DataFrame) -> pd.DataFrame:
         runs = runs.assign(departs=None)
 
     rows = []
-    for (trip_id, service, direction), g in runs.groupby(["trip_id", "service", "direction"]):
+    for trip_id, g in runs.groupby("trip_id"):
         n = len(g)
         if n < MIN_LEAGUE_RUNS:
             continue
         p = float(g["late4"].mean())
         low, high = wilson(p, n)
         rows.append({
-            "trip_id": trip_id, "service": service, "direction": direction,
+            "trip_id": trip_id, "service": _most_common(g["service"]), "direction": _most_common(g["direction"]),
             "departs": _most_common(g["departs"]), "runs": n,
             "late_pct": round(p * 100, 1), "ci_low": round(low * 100, 1), "ci_high": round(high * 100, 1),
             "last_stop_name": _most_common(g["station"]),
