@@ -125,11 +125,11 @@ def test_load_clean_is_signed_and_scheduled():
     first = df.loc["101"]
     assert first.delay_minutes == -3.0
     assert first.delay_severity == "On Time"
-    assert not first.is_delayed
+    assert not first.late4
     assert first.hour == 8
     assert first.commute_period == "Morning"
     assert first.dep_ts == datetime(2026, 3, 4, 8, 0)
-    assert df.loc["102"].delay_severity == "Major" and df.loc["102"].is_delayed
+    assert df.loc["102"].delay_severity == "Major" and df.loc["102"].late4
     assert df.loc["103"].delay_severity == "Minor"
     assert pd.isna(df.loc["103"].dep_ts)
 
@@ -144,6 +144,14 @@ def test_load_clean_is_signed_and_scheduled():
 def test_load_clean_commute_period_bounds(day, sched, period):
     con = make_store([arrival(date=day, sched_ts=sched)])
     assert load_clean(con).commute_period.iloc[0] == period
+
+
+def test_load_clean_returns_only_the_columns_downstream_reads():
+    # dashboard (files, plots, last-stop league), incidents
+    df = load_clean(make_store([arrival()]))
+    assert list(df.columns) == ["date", "trip_id", "stop_id", "stop_name", "station", "stop_rank", "ping_count",
+                                "delay_minutes", "delay_severity", "late4", "hour", "commute_period", "weekday",
+                                "service", "direction", "bad_feed", "dep_ts"]
 
 
 def test_load_clean_can_include_bad_feed_days():

@@ -1,13 +1,15 @@
 import json
 from datetime import datetime
 
+import duckdb
 import numpy as np
 import pandas as pd
 import pytest
 
 from src.pipeline.clean import last_stop_league
 from src.pipeline.dashboard import (
-    DASHBOARD_FILES, build_dashboard, commute_shares, daily_severity_shares, write_dashboard, write_json_atomic,
+    DASHBOARD_FILES, _headline, _with_calendar, build_dashboard, commute_shares, daily_severity_shares, legacy_stats,
+    write_dashboard, write_json_atomic,
 )
 
 
@@ -64,6 +66,33 @@ def league_frame(runs_523=80, runs_305=10):
 NOW = datetime(2026, 3, 8, 0, 5)
 
 
+def legacy_of(df: pd.DataFrame) -> dict:
+    """``legacy_stats`` over ``df`` as the ``arrivals`` table (DATE dates, as in the store)."""
+    con = duckdb.connect()
+    con.register("frame", df.assign(date=pd.to_datetime(df["date"]).dt.date))
+    con.execute("CREATE TABLE arrivals AS SELECT * FROM frame")
+    return legacy_stats(con)
+
+
+def pandas_legacy(df: pd.DataFrame) -> dict:
+    """The legacy stats.json keys as build_dashboard computed them from the whole arrivals frame."""
+    old = _with_calendar(df)
+    return {**_headline(old), "date_range": {"start": old["date"].min().strftime("%Y-%m-%d"),
+                                             "end": old["date"].max().strftime("%Y-%m-%d")}}
+
+
+def many_arrivals(n=5000, seed=7) -> pd.DataFrame:
+    """Legacy-shaped rows over 60 days: clamped delays, severities from the delay, an even row count."""
+    rng = np.random.default_rng(seed)
+    delay = np.round(np.clip(rng.gamma(0.6, 6.0, n) - 1.0, 0, None), 4)
+    return pd.DataFrame({
+        "date": pd.Timestamp("2026-01-01") + pd.to_timedelta(rng.integers(0, 60, n), unit="D"),
+        "trip_id": rng.choice(["101", "103", "523"], n),
+        "delay_minutes": delay,
+        "delay_severity": np.where(delay > 15, "Major", np.where(delay > 4, "Minor", "On Time")),
+    })
+
+
 def test_produces_every_website_file():
     assert set(build_dashboard(arrivals(), NOW)) == set(DASHBOARD_FILES)
 
@@ -99,7 +128,7 @@ def test_stats():
 
 def test_stats_clean_block_differs_from_legacy():
     clean = arrivals().iloc[[0, 3, 4]]  # On Time, On Time, On Time
-    stats = build_dashboard(clean, NOW, legacy=arrivals())["stats.json"]
+    stats = build_dashboard(clean, NOW, legacy=legacy_of(arrivals()))["stats.json"]
     assert stats["on_time_percentage"] == 50.0 and stats["total_arrivals"] == 6  # legacy keys use legacy
     assert stats["clean"] == {
         "on_time_percentage": 100.0, "minor_delay_percentage": 0.0, "major_delay_percentage": 0.0,
@@ -154,13 +183,13 @@ def test_outputs_are_strict_json():
     df.loc[df["trip_id"] == "305", ["weekday", "commute_period"]] = [False, "Weekend"]
     clean = df[df["commute_period"] != "Weekend"]  # no clean Weekend rows; 305 has no clean rows at all
     legacy = df  # ... but it is still in the legacy frame
-    out = build_dashboard(clean, NOW, legacy=legacy, daily=df)
+    out = build_dashboard(clean, NOW, legacy=legacy_of(legacy), daily=df)
     for payload in out.values():
         json.dumps(payload, allow_nan=False)
     assert "Weekend" not in out["commute_analysis.json"]
     assert 305 not in [t["trip_id"] for t in out["train_performance.json"]]
     # an empty clean frame (the build skips it, but the function must still emit strict JSON)
-    for payload in build_dashboard(df.iloc[:0], NOW, legacy=legacy, daily=df).values():
+    for payload in build_dashboard(df.iloc[:0], NOW, legacy=legacy_of(legacy), daily=df).values():
         json.dumps(payload, allow_nan=False)
 
 
@@ -220,3 +249,24 @@ def test_write_json_atomic_replaces_file(tmp_path):
     write_json_atomic(path, {"a": 1}, indent=2)
     assert path.read_text() == '{\n  "a": 1\n}'
     assert list(tmp_path.iterdir()) == [path]
+
+
+@pytest.mark.parametrize("seed", [7, 8, 9])
+def test_legacy_stats_from_sql_equal_the_pandas_computation(seed):
+    df = many_arrivals(seed=seed)
+    assert legacy_of(df) == pandas_legacy(df)
+    assert json.dumps(legacy_of(df)) == json.dumps(pandas_legacy(df))  # byte-identical in stats.json
+
+
+def test_legacy_stats_on_the_small_fixture():
+    assert legacy_of(arrivals()) == pandas_legacy(arrivals())
+    stats = build_dashboard(arrivals(), NOW, legacy=legacy_of(arrivals()))["stats.json"]
+    assert json.dumps(stats) == json.dumps(build_dashboard(arrivals(), NOW)["stats.json"])
+
+
+def test_build_dashboard_leaves_its_input_frames_alone():
+    clean, daily = arrivals(), arrivals()
+    before = clean.copy(), daily.copy()
+    build_dashboard(clean, NOW, daily=daily)
+    pd.testing.assert_frame_equal(clean, before[0])
+    pd.testing.assert_frame_equal(daily, before[1])

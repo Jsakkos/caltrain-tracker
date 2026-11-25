@@ -108,23 +108,26 @@ def register_views(con: duckdb.DuckDBPyConnection) -> None:
 def load_clean(con: duckdb.DuckDBPyConnection, include_bad_feed: bool = False) -> pd.DataFrame:
     """Clean arrivals in the dashboard's shape, with signed delays and the scheduled hour.
 
-    The legacy columns are rebuilt from ``delay_signed`` and ``sched_ts`` so early
+    Only the columns the dashboard files and plots, ``last_stop_league`` and
+    ``detect_incidents`` read. ``delay_minutes``, ``delay_severity``, ``hour`` and
+    ``commute_period`` are rebuilt from ``delay_signed`` and ``sched_ts`` so early
     trains stay negative and a train scheduled at 08:55 is an 8 o'clock train
     however late it runs. ``dep_ts`` is the train's scheduled departure from its
     origin, when ``scheduled_trips`` has it.
     """
     view = "clean_all_days" if include_bad_feed else "clean"
     return con.execute(f"""
-        SELECT c.* REPLACE (
-                   c.delay_signed AS delay_minutes,
-                   c.late4 AS is_delayed,
-                   CASE WHEN c.delay_signed > {MAJOR_MIN} THEN 'Major'
-                        WHEN c.delay_signed > {LATE_MIN} THEN 'Minor' ELSE 'On Time' END AS delay_severity,
-                   c.sched_hour AS hour,
-                   CASE WHEN isodow(c.sched_ts) >= 6 THEN 'Weekend'
-                        WHEN CAST(c.sched_ts AS TIME) BETWEEN TIME '06:00:00' AND TIME '09:00:00' THEN 'Morning'
-                        WHEN CAST(c.sched_ts AS TIME) BETWEEN TIME '15:30:00' AND TIME '19:30:00' THEN 'Evening'
-                        ELSE 'Other' END AS commute_period),
+        SELECT c.date, c.trip_id, c.stop_id, c.stop_name, c.station, c.stop_rank, c.ping_count,
+               c.delay_signed AS delay_minutes,
+               CASE WHEN c.delay_signed > {MAJOR_MIN} THEN 'Major'
+                    WHEN c.delay_signed > {LATE_MIN} THEN 'Minor' ELSE 'On Time' END AS delay_severity,
+               c.late4,
+               c.sched_hour AS hour,
+               CASE WHEN isodow(c.sched_ts) >= 6 THEN 'Weekend'
+                    WHEN CAST(c.sched_ts AS TIME) BETWEEN TIME '06:00:00' AND TIME '09:00:00' THEN 'Morning'
+                    WHEN CAST(c.sched_ts AS TIME) BETWEEN TIME '15:30:00' AND TIME '19:30:00' THEN 'Evening'
+                    ELSE 'Other' END AS commute_period,
+               c.weekday, c.service, c.direction, c.bad_feed,
                t.dep_ts
         FROM {view} c LEFT JOIN scheduled_trips t ON t.date = c.date AND t.trip_id = c.trip_id
         ORDER BY c.date, c.trip_id, c.stop_rank
