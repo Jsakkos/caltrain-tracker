@@ -49,6 +49,8 @@ def export_dashboard_data():
         "monthly_summary.json",
         "incidents.json",
         "incident_trajectories.json",
+        "stories.json",
+        "stories_example_day.json",
     ]
     count = 0
     for filename in dashboard_files:

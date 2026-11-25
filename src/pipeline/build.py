@@ -22,7 +22,8 @@ from src.pipeline.arrivals import load_arrivals, open_store, update_arrivals
 from src.pipeline.clean import load_clean, register_views
 from src.pipeline.dashboard import write_dashboard, write_json_atomic
 from src.pipeline.incidents import detect_incidents
-from src.pipeline.network_stops import detect_network_stops
+from src.pipeline.network_stops import detect_network_stops, never_ran
+from src.pipeline.stories import build_stories, example_day, validate_stories
 from src.utils.geo_utils import load_shape_points
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -92,6 +93,20 @@ def build(db: Path, store_path: Path, out: Path, feeds_root: Path = FEEDS_DIR,
         write_json_atomic(Path(out) / "data" / "incident_trajectories.json", trajectories)
         timings["incidents"] = time.monotonic() - started
         log.info("%d incidents", len(incidents))
+
+        # Never let the stories step break the build or the other files: on any failure the
+        # previous stories files stay exactly as they were.
+        started = time.monotonic()
+        try:
+            payload = build_stories(store, network_stops, never_ran(store), now)
+            validate_stories(payload)
+            example = example_day(store, gps_loader(store), station_meta, shape, network_stops)
+            write_json_atomic(Path(out) / "data" / "stories.json", payload, indent=2, allow_nan=False)
+            if example is not None:
+                write_json_atomic(Path(out) / "data" / "stories_example_day.json", example, allow_nan=False)
+        except Exception:
+            log.exception("stories step failed; keeping the previous stories files")
+        timings["stories"] = time.monotonic() - started
     finally:
         store.close()
 

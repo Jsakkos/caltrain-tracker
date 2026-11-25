@@ -216,13 +216,13 @@ def commute_figure(arrivals: pd.DataFrame) -> go.Figure:
     return fig
 
 
-def write_json_atomic(path: Path, payload, indent: int | None = None) -> None:
+def write_json_atomic(path: Path, payload, indent: int | None = None, allow_nan: bool = True) -> None:
     """Write via a temp file and rename, so the 02:30 website export never reads half a file."""
     path = Path(path)
     fd, tmp = tempfile.mkstemp(dir=path.parent, prefix=f".{path.name}.", suffix=".tmp")
     try:
         with os.fdopen(fd, "w", encoding="utf-8", newline="\n") as f:
-            json.dump(payload, f, indent=indent)
+            json.dump(payload, f, indent=indent, allow_nan=allow_nan)
         os.replace(tmp, path)
     except BaseException:
         os.unlink(tmp)

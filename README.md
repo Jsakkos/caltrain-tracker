@@ -57,6 +57,8 @@ uv run pytest
 
 `static/` is only partly in git. The nightly build writes `data/*.json` (stats, daily/station/train performance, heatmap, commute, weekly/monthly summaries, incidents) plus `plots/daily_stats.html` and `plots/commute_delay.html`. Those are listed in `.gitignore`, so a fresh checkout doesn't have them; run `python -m src.pipeline.build` to generate them. The rest of `static/` (`dashboard.json`, `station_stats.json`, `stations/`, and the other plots) is hand-made from `notebooks/visualizations/` and stays committed.
 
+Stories: the nightly build also writes `data/stories.json` and `data/stories_example_day.json`, the figures and chart data behind the website's Caltrain stories. The on-time definition they use lives in `src/pipeline/clean.py`. If the stories step fails, the build logs it and keeps the previous two files, and every other output is still written.
+
 # Methodology
 
 ## Data collection
