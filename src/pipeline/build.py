@@ -101,6 +101,11 @@ def build(db: Path, store_path: Path, out: Path, feeds_root: Path = FEEDS_DIR,
             payload = build_stories(store, network_stops, never_ran(store), now)
             validate_stories(payload)
             example = example_day(store, gps_loader(store), station_meta, shape, network_stops)
+            # Serialise both first so a bad example payload cannot leave a new stories.json
+            # beside an old example file.
+            json.dumps(payload, allow_nan=False)
+            if example is not None:
+                json.dumps(example, allow_nan=False)
             write_json_atomic(Path(out) / "data" / "stories.json", payload, indent=2, allow_nan=False)
             if example is not None:
                 write_json_atomic(Path(out) / "data" / "stories_example_day.json", example, allow_nan=False)

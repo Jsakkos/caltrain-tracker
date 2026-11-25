@@ -105,3 +105,33 @@ def test_stories_json_rejects_nan(tmp_path):
     with pytest.raises(ValueError):
         write_json_atomic(tmp_path / "x.json", {"a": float("nan")}, allow_nan=False)
     assert list(tmp_path.iterdir()) == []
+
+
+def test_build_keeps_previous_stories_when_the_example_day_has_nan(tmp_path, monkeypatch, caplog):
+    data = tmp_path / "static" / "data"
+    data.mkdir(parents=True)
+    (data / "stories.json").write_bytes(b'{"previous": true}')
+    payload = {"schema_version": SCHEMA_VERSION, "figures": {}, "stories": {}}
+    monkeypatch.setattr(build_module, "build_stories", lambda *a, **k: payload)
+    monkeypatch.setattr(build_module, "validate_stories", lambda p: None)
+    monkeypatch.setattr(build_module, "example_day", lambda *a, **k: {"points": [float("nan")]})
+
+    _run_build(tmp_path)
+
+    assert (data / "stories.json").read_bytes() == b'{"previous": true}'
+    assert not (data / "stories_example_day.json").exists()
+    assert "stories step failed; keeping the previous stories files" in caplog.text
+
+
+def test_build_calls_the_real_stories_functions_with_matching_arguments(tmp_path, caplog):
+    _run_build(tmp_path)  # tiny fixture: unstubbed stories step
+    records = [r for r in caplog.records if "stories step failed" in r.getMessage()]
+    data = tmp_path / "static" / "data"
+    if records:
+        exc = records[0].exc_info[1]
+        assert type(exc) is ValueError, repr(exc)  # the validator rejecting thin data, not a bad call
+        assert "is empty" in str(exc) or "missing" in str(exc) or "finite" in str(exc), str(exc)
+        assert not (data / "stories.json").exists()
+    else:
+        from src.pipeline.stories import validate_stories
+        validate_stories(json.loads((data / "stories.json").read_text()))
