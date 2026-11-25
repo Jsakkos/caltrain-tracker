@@ -71,13 +71,13 @@ def test_system_and_single_train_incidents():
     assert system["avg_delay_min"] == 18.0
     assert system["on_time_pct"] == 25.0
     assert system["severity_score"] == 54
-    assert system["root_cause_train"] == "101"
-    assert system["root_cause_station"] == "S0"
+    assert "root_cause_train" not in system and "root_cause_station" not in system
+    assert system["held_near"] is None
 
     train = by_id["2026-03-05-train-201"]
     assert train["tier"] == 1
     assert train["summary"] == "Train 201 delayed 30 min at S4"
-    assert train["root_cause_station"] == "S2"  # found from the flat stretch of its trajectory
+    assert "root_cause_train" not in train and "root_cause_station" not in train
     assert [i["id"] for i in incidents] == ["2026-03-04-system", "2026-03-05-train-201"]
 
     trajs = {t["trip_id"]: t for t in trajectories["2026-03-04-system"]["trajectories"]}
@@ -95,3 +95,21 @@ def test_no_major_delays_means_no_incidents():
     df = arrivals()
     df["delay_minutes"] = 0.0
     assert detect_incidents(df, gps, META, SHAPE) == ([], {})
+
+
+def test_held_near_comes_from_the_network_stop():
+    def stops(*rows):
+        return pd.DataFrame(rows, columns=["date", "t_start", "held_near", "is_network_stop"])
+
+    ns = stops(
+        (date(2026, 3, 4), pd.Timestamp("2026-03-04 09:30"), "Redwood City", True),
+        (date(2026, 3, 4), pd.Timestamp("2026-03-04 07:10"), "Palo Alto", True),  # earliest stop wins
+        (date(2026, 3, 4), pd.Timestamp("2026-03-04 06:00"), "Millbrae", False),  # not a network stop
+    )
+    incidents, _ = detect_incidents(arrivals(), gps, META, SHAPE, network_stops=ns)
+    by_id = {i["id"]: i for i in incidents}
+    assert by_id["2026-03-04-system"]["held_near"] == "Palo Alto"
+    assert by_id["2026-03-05-train-201"]["held_near"] is None  # no network stop that day
+
+    incidents, _ = detect_incidents(arrivals(), gps, META, SHAPE, network_stops=ns.iloc[0:0])
+    assert all(i["held_near"] is None for i in incidents)

@@ -17,11 +17,12 @@ from zoneinfo import ZoneInfo
 
 import pandas as pd
 
-from src.data.gtfs_feeds import FEEDS_DIR
+from src.data.gtfs_feeds import FEEDS_DIR, load_stops
 from src.pipeline.arrivals import load_arrivals, open_store, update_arrivals
 from src.pipeline.clean import load_clean, register_views
 from src.pipeline.dashboard import write_dashboard, write_json_atomic
 from src.pipeline.incidents import detect_incidents
+from src.pipeline.network_stops import detect_network_stops
 from src.utils.geo_utils import load_shape_points
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -77,9 +78,16 @@ def build(db: Path, store_path: Path, out: Path, feeds_root: Path = FEEDS_DIR,
         timings["dashboard"] = time.monotonic() - started
 
         started = time.monotonic()
+        stops = load_stops(feeds_root)
+        stops = stops[stops["stop_id"].str.isnumeric()]
+        network_stops = detect_network_stops(store, stops)
+        timings["network_stops"] = time.monotonic() - started
+
+        started = time.monotonic()
         station_meta = json.loads(Path(station_meta_path).read_text(encoding="utf-8"))["stations"]
         shape = load_shape_points(str(gtfs_dir))
-        incidents, trajectories = detect_incidents(legacy, gps_loader(store), station_meta, shape)
+        incidents, trajectories = detect_incidents(arrivals, gps_loader(store), station_meta, shape,
+                                                  network_stops=network_stops)
         write_json_atomic(Path(out) / "data" / "incidents.json", incidents, indent=2)
         write_json_atomic(Path(out) / "data" / "incident_trajectories.json", trajectories)
         timings["incidents"] = time.monotonic() - started
