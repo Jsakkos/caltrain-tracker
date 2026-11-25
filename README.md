@@ -19,7 +19,7 @@ cron 02:15 UTC: scripts/backup_to_nas.py      cron 02:30 UTC: scripts/export_to_
 ```
 
 - **Collector** (`src/collector.py`, `Dockerfile.collector`): stdlib-only, ~20 MB of RAM. One request a minute and no retries within a minute, because 511 allows 60 requests per hour per API key. Never run a second poller on the same key.
-- **Nightly build** (`src/pipeline/`): `arrivals.py` recomputes only days that are new, the last two Pacific days, or days whose schedule version changed (for example after a monthly archive backfill). `dashboard.py` and `incidents.py` write the website files. A full rebuild of 14 months takes about 15 s.
+- **Nightly build** (`src/pipeline/`): `arrivals.py` recomputes only days that are new, the last two Pacific days, or days whose schedule version changed (for example after a monthly archive backfill). `clean.py` holds the rules for which arrivals count and how late is late; `dashboard.py`, `incidents.py`, `network_stops.py` (line-wide stops and trips that never ran) and `stories.py` write the website files. A full rebuild of 15 months takes about a minute.
 - **Scheduling**: host cron (`deploy/crontab.txt`). There's no orchestrator.
 
 ## Setup (pve-docker)
@@ -57,6 +57,8 @@ uv run pytest
 
 `static/` is only partly in git. The nightly build writes `data/*.json` (stats, daily/station/train performance, heatmap, commute, weekly/monthly summaries, incidents) plus `plots/daily_stats.html` and `plots/commute_delay.html`. Those are listed in `.gitignore`, so a fresh checkout doesn't have them; run `python -m src.pipeline.build` to generate them. The rest of `static/` (`dashboard.json`, `station_stats.json`, `stations/`, and the other plots) is hand-made from `notebooks/visualizations/` and stays committed.
 
+Fields added on top of the legacy file shapes: `stats.json` has a `clean` block (the headline figures over clean arrivals, plus `bad_feed_days`); each `daily_performance.json` row has `bad_feed` (the day's feed was stale, so it is left out of every other figure); each `train_performance.json` row has `last_stop_runs`, `last_stop_late_pct` and `last_stop_name` (how often the train is late at its last observed weekday stop; the share is null under 80 runs); each incident has `held_near` (the station holding the most trains during that day's first line-wide stop, or null).
+
 Stories: the nightly build also writes `data/stories.json` and `data/stories_example_day.json`, the figures and chart data behind the website's Caltrain stories. The on-time definition they use lives in `src/pipeline/clean.py`. If the stories step fails, the build logs it and keeps the previous two files, and every other output is still written.
 
 # Methodology
@@ -90,7 +92,17 @@ Train arrival detection
 Since the raw data only contains the location of each train and the stop it's travelling towards, we need to determine when the trains arrive. The distance to each stop was calculated using the Haversine formula on the train lat/long and the arriving stop lat/long. Since the data is relatively sparse, to determine when a train had arrived, the row with the minimum distance to the stop for each train ID, date, and stop ID was used to indicate train arrival.
 ## Calculation of on-time performance
 
-On-time performance was calculated on a per-stop, per-train basis. For each stop on a route, the train status is marked as delayed if the train arrives to the stop more than 4 minutes behind schedule. Minor delays are defined as delays between 5-14 minutes, and major delays are 15+ minutes.
+On-time performance is calculated per train and stop. A train is late at a stop if it arrives more than 4 minutes behind schedule; early counts as on time. Minor delays are more than 4 and up to 15 minutes, major delays more than 15.
+
+Only trustworthy arrivals count (`src/pipeline/clean.py`, shared with the analysis notebooks):
+
+- the origin stop is dropped (the train sits at the platform, so its closest approach says nothing);
+- calls scheduled at or after 24:00 are dropped (511 drops every vehicle at midnight Pacific);
+- the closest ping must be within 1 km of the platform;
+- only real train numbers count;
+- service days where 511's positions were stale (`bad_feed`: under 45% of consecutive pings moved, or under 60% of non-origin arrivals located within 1 km) are dropped whole.
+
+Every file is computed from these clean arrivals, with the train's scheduled hour and signed delay, with two exceptions: the top-level headline keys of `stats.json` keep the legacy figures over every arrival (its `clean` block has the clean ones), and `daily_performance.json` also lists the bad-feed days, flagged.
 
 ## Commute time windows
 ### Morning
@@ -121,7 +133,7 @@ Evening commute hours were defined as 3:30-7:30 pm.
 
 ## Scoring rules and parity
 
-The build reproduces the legacy pandas flow, including its quirks (the two plots weight arrivals by ping count), with one deliberate fix: arrivals are grouped by GTFS service date, and a call at 24:10 on day D is scored at 00:10 on D+1. Pings in the small hours go to whichever day's trip (that date's or the previous one's) is scheduled closest in time. The legacy flow wrapped such times onto the ping's own date, so they were scored about 24 hours off and the outlier clamp turned them into "On Time". The rules are listed in `docs/superpowers/plans/2026-10-03-duckdb-build.md`. To check a change against a known-good output directory, run `python scripts/compare_outputs.py OLD/data NEW/data`.
+The website files keep the legacy file names, keys, rounding and sort order, so the website reads them unchanged; the figures follow the clean rules above (the top-level `stats.json` headline keys excepted), and the two plots still weight arrivals by ping count as the legacy plots did. Arrivals are grouped by GTFS service date, and a call at 24:10 on day D is scored at 00:10 on D+1. Pings in the small hours go to whichever day's trip (that date's or the previous one's) is scheduled closest in time. The legacy flow wrapped such times onto the ping's own date, so they were scored about 24 hours off and the outlier clamp turned them into "On Time". The rules are listed in `docs/superpowers/plans/2026-10-03-duckdb-build.md`. To check a change against a known-good output directory, run `python scripts/compare_outputs.py OLD/data NEW/data`.
 
 ## Dependency pinning
 
