@@ -14,6 +14,7 @@ import duckdb
 import pandas as pd
 
 from src.data.gtfs_feeds import FEEDS_DIR, discover_feeds, feed_for_date, load_stops, schedule_for_dates
+from src.pipeline.clean import FEED_HEALTH_SQL
 
 AFTER_MIDNIGHT_HOURS = 4
 
@@ -32,11 +33,37 @@ CREATE TABLE IF NOT EXISTS arrivals (
     commute_period VARCHAR,
     hour INTEGER,
     ping_count INTEGER,
-    feed_version VARCHAR
+    feed_version VARCHAR,
+    sched_ts TIMESTAMP,
+    delay_signed DOUBLE,
+    dist_m DOUBLE,
+    stop_rank INTEGER,
+    n_stops INTEGER,
+    route_id VARCHAR,
+    direction_id VARCHAR
 );
 CREATE TABLE IF NOT EXISTS processed_days (
     date DATE PRIMARY KEY,
     feed_version VARCHAR
+);
+CREATE TABLE IF NOT EXISTS scheduled_trips (
+    date DATE,
+    trip_id VARCHAR,
+    route_id VARCHAR,
+    direction_id VARCHAR,
+    dep_ts TIMESTAMP,
+    n_stops INTEGER
+);
+-- Per-day ping statistics; src/pipeline/clean.py decides from these which days to trust.
+CREATE TABLE IF NOT EXISTS feed_health (
+    date DATE,
+    pings BIGINT,
+    polls BIGINT,
+    vehicles_per_poll DOUBLE,
+    pos_change_share DOUBLE,
+    trains BIGINT,
+    first_ping TIMESTAMP,
+    last_ping TIMESTAMP
 );
 """
 
@@ -49,6 +76,7 @@ CREATE TABLE IF NOT EXISTS processed_days (
 ARRIVALS_SQL = """
 WITH sched AS (
     SELECT date AS service_date, trip_id, stop_id, arrival_time, feed_version,
+           stop_rank, n_stops, route_id, direction_id,
            CAST(date AS TIMESTAMP) + to_seconds(
                CAST(split_part(arrival_time, ':', 1) AS INTEGER) * 3600
                + CAST(split_part(arrival_time, ':', 2) AS INTEGER) * 60
@@ -57,7 +85,8 @@ WITH sched AS (
 ),
 assigned AS (
     SELECT p.id, p.trip_id, p.stop_id, p.lat, p.lon, p.ts,
-           s.service_date, s.arrival_time, s.feed_version, s.sched_ts
+           s.service_date, s.arrival_time, s.feed_version, s.sched_ts,
+           s.stop_rank, s.n_stops, s.route_id, s.direction_id
     FROM pings p
     JOIN scan_days USING (date)
     JOIN sched s ON s.trip_id = p.trip_id AND s.stop_id = p.stop_id AND s.service_date IN (p.date, p.date - 1)
@@ -66,19 +95,21 @@ assigned AS (
 ),
 located AS (
     SELECT a.id, a.trip_id, a.stop_id, a.service_date AS date, a.ts, a.arrival_time, a.feed_version,
-           a.sched_ts, st.stop_name, st.parent_station,
+           a.sched_ts, a.stop_rank, a.n_stops, a.route_id, a.direction_id, st.stop_name, st.parent_station,
            power(sin(radians(st.stop_lat - a.lat) / 2), 2)
-             + cos(radians(a.lat)) * cos(radians(st.stop_lat)) * power(sin(radians(st.stop_lon - a.lon) / 2), 2) AS a
+             + cos(radians(a.lat)) * cos(radians(st.stop_lat)) * power(sin(radians(st.stop_lon - a.lon) / 2), 2) AS h
     FROM assigned a
     JOIN todo_days t ON t.date = a.service_date
     JOIN stops st USING (stop_id)
 ),
+measured AS (
+    SELECT *, 6371000 * 2 * atan2(sqrt(h), sqrt(1 - h)) AS dist_m FROM located
+),
 ranked AS (
     SELECT *,
            count(*) OVER (PARTITION BY trip_id, stop_id, date) AS ping_count,
-           row_number() OVER (PARTITION BY trip_id, stop_id, date
-                              ORDER BY 6371000 * 2 * atan2(sqrt(a), sqrt(1 - a)), id) AS rn
-    FROM located
+           row_number() OVER (PARTITION BY trip_id, stop_id, date ORDER BY dist_m, id) AS rn
+    FROM measured
 ),
 scored AS (
     SELECT *, (epoch(ts) - epoch(sched_ts)) / 60.0 AS raw_delay
@@ -100,8 +131,30 @@ SELECT date, trip_id, stop_id, stop_name, parent_station,
             ELSE 'Other' END AS commute_period,
        hour(ts) AS hour,
        CAST(ping_count AS INTEGER) AS ping_count,
-       feed_version
+       feed_version,
+       sched_ts,
+       raw_delay AS delay_signed,
+       dist_m,
+       CAST(stop_rank AS INTEGER) AS stop_rank,
+       CAST(n_stops AS INTEGER) AS n_stops,
+       CAST(route_id AS VARCHAR) AS route_id,
+       CAST(direction_id AS VARCHAR) AS direction_id
 FROM cleaned
+"""
+
+# One row per train per scored day, straight from the timetable (no pings
+# needed). Calls at 24:00 or later belong to the next calendar day and are left out.
+SCHEDULED_TRIPS_SQL = """
+SELECT date, trip_id, min(route_id) AS route_id, min(direction_id) AS direction_id,
+       CAST(date AS TIMESTAMP) + to_seconds(min(
+           CAST(split_part(arrival_time, ':', 1) AS INTEGER) * 3600
+           + CAST(split_part(arrival_time, ':', 2) AS INTEGER) * 60
+           + COALESCE(TRY_CAST(split_part(arrival_time, ':', 3) AS INTEGER), 0))) AS dep_ts,
+       CAST(max(n_stops) AS INTEGER) AS n_stops
+FROM schedule
+WHERE date IN (SELECT date FROM todo_days)
+  AND CAST(split_part(arrival_time, ':', 1) AS INTEGER) < 24
+GROUP BY date, trip_id
 """
 
 
@@ -110,8 +163,26 @@ def open_store(path: str) -> duckdb.DuckDBPyConnection:
     # (DuckDB otherwise takes up to 80% of RAM and every core).
     store = duckdb.connect(path, config={"memory_limit": "1GB", "threads": 4})
     store.execute("INSTALL sqlite; LOAD sqlite; SET sqlite_all_varchar = true")
+    _migrate(store)
     store.execute(SCHEMA)
     return store
+
+
+def _migrate(store: duckdb.DuckDBPyConnection) -> None:
+    """Reset a store written before arrivals kept signed delay and stop rank.
+
+    Dropping processed_days along with the tables makes the next update_arrivals
+    recompute every day with the richer columns.
+    """
+    columns = {r[0] for r in store.execute(
+        "SELECT column_name FROM information_schema.columns WHERE table_name = 'arrivals'").fetchall()}
+    if columns and "delay_signed" not in columns:
+        for table in ("arrivals", "processed_days", "scheduled_trips", "feed_health"):
+            store.execute(f"DROP TABLE IF EXISTS {table}")
+    elif columns and not store.execute(
+            "SELECT 1 FROM information_schema.tables WHERE table_name = 'feed_health'").fetchone():
+        # Scored before feed health was kept: rescore, or every day would look unhealthy-by-absence.
+        store.execute("DELETE FROM processed_days")
 
 
 def attach_pings(store: duckdb.DuckDBPyConnection, sqlite_path: str) -> None:
@@ -177,8 +248,12 @@ def _score_days(store: duckdb.DuckDBPyConnection, days: list[date], version: dic
     try:
         store.execute("BEGIN")
         store.execute("DELETE FROM arrivals WHERE date IN (SELECT date FROM todo_days)")
+        store.execute("DELETE FROM scheduled_trips WHERE date IN (SELECT date FROM todo_days)")
+        store.execute("DELETE FROM feed_health WHERE date IN (SELECT date FROM todo_days)")
+        store.execute(f"INSERT INTO feed_health {FEED_HEALTH_SQL}")
         if not schedule.empty:  # an empty frame has untyped columns DuckDB can't join on
             store.execute(f"INSERT INTO arrivals {ARRIVALS_SQL}")
+            store.execute(f"INSERT INTO scheduled_trips {SCHEDULED_TRIPS_SQL}")
         store.execute("INSERT OR REPLACE INTO processed_days SELECT date, feed_version FROM processed")
         store.execute("COMMIT")
     except Exception:

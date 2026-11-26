@@ -26,6 +26,7 @@ from viz import BLUE, ORANGE, AQUA, VIOLET, RED, MUTED, GRID, SEQ, DIV, DIR_COLO
 
 sys.path.insert(0, "..")
 from src.utils.geo_utils import load_shape_points, project_to_route_many
+from src.pipeline.network_stops import PLATFORM_NAME, STATION_SQL  # same station set and names as the pipeline
 
 pd.set_option("display.width", 200); pd.set_option("display.max_columns", 30); pd.set_option("display.max_rows", 120); pd.set_option("display.max_colwidth", 80)
 con = connect()
@@ -53,25 +54,27 @@ caltrain_reported
 # ## 2. Detector A: many trains stationary at once
 #
 # A *stationary run* is a stretch of ≥ 10 consecutive pings with an identical position,
-# excluding trains parked at the four terminals. Positions repeat on their own about 40% of
+# excluding trains parked at the four terminals. Positions are matched to Caltrain platforms
+# only: the numeric-id "San Jose Shuttle" stop sits ~150 m from Diridon and would otherwise
+# hide trains parked there. Positions repeat on their own about 40% of
 # the time (the feed clock advances without a new fix), so single stationary runs are
 # common; what is rare is **four or more trains stationary at the same minute**. To
 # separate a real stop from a feed freeze (which also freezes positions, see notebook 01),
 # an event must be followed by at least five trains ≥ 15 minutes late within four hours.
 
 # %%
-con.execute("""create or replace temp view stops_run as
+con.execute(f"""create or replace temp view stops_run as
 with p as (select p.*, lag(lat) over w plat, lag(lon) over w plon
   from pings p join feed_days d using(date) where not d.bad_feed and hour(ts) between 4 and 23 and lat>1
   window w as (partition by trip_id, date order by ts)),
  r as (select *, case when plat is null or lat<>plat or lon<>plon then 1 else 0 end moved from p),
  g as (select *, sum(moved) over (partition by trip_id, date order by ts rows unbounded preceding) grp from r),
  runs as (select trip_id, date, grp, min(ts) t0, max(ts) t1, count(*) n, any_value(lat) lat, any_value(lon) lon from g group by 1,2,3 having count(*)>=10),
- dd as (select r.*, s.stop_name, 6371000*2*asin(sqrt(power(sin(radians(s.stop_lat-r.lat)/2),2)+cos(radians(r.lat))*cos(radians(s.stop_lat))*power(sin(radians(s.stop_lon-r.lon)/2),2))) dist from runs r, stops s),
- near as (select trip_id, date, grp, t0, t1, n, lat, lon, stop_name nearest, dist dist_station from dd qualify row_number() over (partition by trip_id, date, grp order by dist) = 1)
+ dd as (select r.*, s.stop_name, 6371000*2*asin(sqrt(power(sin(radians(s.stop_lat-r.lat)/2),2)+cos(radians(r.lat))*cos(radians(s.stop_lat))*power(sin(radians(s.stop_lon-r.lon)/2),2))) dist from runs r, stops s where regexp_matches(s.stop_name, '{PLATFORM_NAME}')),
+ near as (select trip_id, date, grp, t0, t1, n, lat, lon, stop_name nearest, {STATION_SQL.format(col="stop_name")} station, dist dist_station from dd qualify row_number() over (partition by trip_id, date, grp order by dist) = 1)
 select * from near where not (dist_station<600 and (nearest ilike 'San Francisco%' or nearest ilike 'San Jose Diridon%' or nearest ilike 'Tamien%' or nearest ilike 'Gilroy%'))""")
 con.execute("""create or replace temp view stop_min as
-  select date, trip_id, t0, t1, nearest, dist_station, unnest(generate_series(date_trunc('minute',t0), date_trunc('minute',t1), interval 1 minute)) m from stops_run""")
+  select date, trip_id, t0, t1, nearest, station, dist_station, unnest(generate_series(date_trunc('minute',t0), date_trunc('minute',t1), interval 1 minute)) m from stops_run""")
 cand = qq("""with mm as (select date, m, count(distinct trip_id) k from stop_min group by 1,2),
  ev as (select date, m, k, m - lag(m) over (partition by date order by m) gap from mm where k>=4),
  e2 as (select *, sum(case when gap is null or gap > interval 20 minute then 1 else 0 end) over (partition by date order by m) eid from ev)
@@ -106,7 +109,8 @@ qq("""select quantile_cont(n,0.5) median_per_day, quantile_cont(n,0.9) p90, max(
 #
 # For each candidate: trains held, trains ≥ 15 min late in the following four hours,
 # the worst delay, whether both directions were hit, trips cancelled from an hour before
-# the stop onward, and hours until the first hour with < 15% of arrivals late.
+# the stop onward, and hours until the first hour with < 15% of arrivals late. The hold
+# station is where the most trains were frozen (then the most train-minutes, then the name).
 
 # %%
 ev = qq("""
@@ -118,12 +122,13 @@ with m as (
    (select count(*) from cancelled c where c.date=e.date and c.dep_ts >= e.t_start - interval 1 hour) cancelled_after,
    (select string_agg(trip_id, ' ' order by dep_ts) from cancelled c where c.date=e.date and c.dep_ts >= e.t_start - interval 1 hour) cancelled_ids,
    (select min(hh) from (select date_trunc('hour', sched_ts) hh, avg(late4::int) l from clean h where h.date=e.date and h.sched_ts > e.t_end group by 1) x where l < 0.15) first_normal_hour,
-   (select mode(nearest) from stops_run s where s.date=e.date and s.t1>=e.t_start and s.t0<=e.t_end) hold_station
+   (select station from (select s.station, count(distinct s.trip_id) trains, count(distinct (s.trip_id, s.m)) train_minutes
+      from stop_min s where s.date=e.date and s.m between e.t_start and e.t_end group by 1)
+    order by trains desc, train_minutes desc, station limit 1) hold_station
  from cand e)
 select date, strftime(t_start,'%H:%M') t_start, hold_mins, max_trains, hold_station, trains_15late_4h, round(max_delay) max_delay, dirs_hit,
        cancelled_after, cancelled_ids, round(epoch(first_normal_hour - t_start)/3600,1) hours_to_normal
 from m order by date, t_start""")
-ev["hold_station"] = ev.hold_station.str.replace(" Caltrain Station", "").str.replace(" Northbound| Southbound", "", regex=True)
 ev["network_stop"] = ev.trains_15late_4h >= 5
 ev[ev.network_stop].reset_index(drop=True)
 

@@ -38,7 +38,8 @@ CURRENT_DIR = BASE_DIR / "gtfs_data"
 DATAFEEDS_URL = "https://api.511.org/transit/datafeeds"
 
 STOP_COLUMNS = ["stop_id", "stop_name", "parent_station", "stop_lat", "stop_lon"]
-SCHEDULE_COLUMNS = ["date", "trip_id", "stop_id", "stop_sequence", "arrival_time", "feed_version"]
+SCHEDULE_COLUMNS = ["date", "trip_id", "stop_id", "stop_sequence", "arrival_time", "feed_version",
+                    "stop_rank", "n_stops", "route_id", "direction_id"]
 
 
 @dataclass(frozen=True)
@@ -130,20 +131,32 @@ def _stop_calls(folder: Path, service_ids: frozenset[str]) -> pd.DataFrame:
     # modified-service trips such as "M101" run as "101".
     number = trips.get("trip_short_name", pd.Series("", index=trips.index))
     trips = trips.assign(train=number.where(number != "", trips.trip_id).str.lstrip("M"))
-    calls = tables["stop_times"].merge(trips[["trip_id", "train"]], on="trip_id")
+    for column in ("route_id", "direction_id"):
+        if column not in trips:  # not every archive carries them
+            trips = trips.assign(**{column: ""})
+    calls = tables["stop_times"].merge(trips[["trip_id", "train", "route_id", "direction_id"]], on="trip_id")
+    calls = calls.assign(stop_sequence=calls.stop_sequence.astype(int))
+    # Caltrain's stop_sequence has gaps, so rank the calls within each GTFS trip
+    # (1..n) before trip ids become train numbers.
+    stop_rank = calls.groupby("trip_id")["stop_sequence"].rank(method="first").astype(int)
+    n_stops = calls.groupby("trip_id")["stop_id"].transform("size")
     return pd.DataFrame({
         "trip_id": calls.train,
         "stop_id": calls.stop_id,
-        "stop_sequence": calls.stop_sequence.astype(int),
+        "stop_sequence": calls.stop_sequence,
         "arrival_time": calls.arrival_time,
+        "stop_rank": stop_rank,
+        "n_stops": n_stops,
+        "route_id": calls.route_id,
+        "direction_id": calls.direction_id,
     })
 
 
 def schedule_for_dates(dates: Iterable[date], root: Path = FEEDS_DIR) -> pd.DataFrame:
     """Scheduled stop-calls for each date, taken from the feed in effect that day.
 
-    Returns columns ``date, trip_id, stop_id, stop_sequence, arrival_time,
-    feed_version`` with ``trip_id`` holding the public train number. Dates that
+    Returns ``SCHEDULE_COLUMNS`` with ``trip_id`` holding the public train number;
+    ``stop_rank`` and ``n_stops`` place the call within its GTFS trip. Dates that
     no feed covers are simply absent.
     """
     feeds = discover_feeds(root)

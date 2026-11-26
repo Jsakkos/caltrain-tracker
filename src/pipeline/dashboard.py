@@ -10,9 +10,13 @@ import tempfile
 from datetime import datetime
 from pathlib import Path
 
+import duckdb
+import numpy as np
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+
+from src.pipeline.clean import last_stop_league
 
 DASHBOARD_FILES = [
     "stats.json", "daily_performance.json", "station_performance.json", "train_performance.json",
@@ -25,13 +29,45 @@ PLOT_LAYOUT = dict(plot_bgcolor="#f4f4f4", paper_bgcolor="#f4f4f4", autosize=Tru
                    margin=dict(l=20, r=20, t=50, b=20), title_font_size=24)
 
 
+# The legacy headline keys of stats.json, over every arrival (good or bad), straight from
+# the arrivals table so the nightly build never holds that frame. legacy_stats finishes the
+# arithmetic exactly as _headline does, so the values match it to the last digit.
+LEGACY_STATS_SQL = """
+WITH last AS (SELECT max(date) AS d FROM arrivals)
+SELECT count(*) AS total,
+       count(*) FILTER (WHERE delay_severity = 'On Time') AS on_time,
+       count(*) FILTER (WHERE delay_severity = 'Minor') AS minor,
+       count(*) FILTER (WHERE delay_severity = 'Major') AS major,
+       avg(delay_minutes) AS avg_delay,
+       median(delay_minutes) AS median_delay,
+       count(DISTINCT date) AS days,
+       min(date) AS first_day,
+       max(date) AS last_day,
+       count(*) FILTER (WHERE date >= last.d - INTERVAL 7 DAY) AS n7,
+       count(*) FILTER (WHERE date >= last.d - INTERVAL 7 DAY AND delay_severity = 'On Time') AS on_time7,
+       count(*) FILTER (WHERE date >= last.d - INTERVAL 30 DAY) AS n30,
+       count(*) FILTER (WHERE date >= last.d - INTERVAL 30 DAY AND delay_severity = 'On Time') AS on_time30
+FROM arrivals, last
+"""
+
+
 def _with_calendar(arrivals: pd.DataFrame) -> pd.DataFrame:
-    df = arrivals.copy()
+    """``arrivals`` plus calendar and severity columns; the input frame is not modified.
+
+    A shallow copy that only adds columns. The calendar strings are made once per
+    date and shared between that date's rows, not once per row.
+    """
+    df = arrivals.copy(deep=False)
     df["date"] = pd.to_datetime(df["date"])
-    df["day_of_week"] = df["date"].dt.dayofweek  # 0=Monday
-    df["day_name"] = df["date"].dt.strftime("%A")
-    df["month"] = df["date"].dt.to_period("M").astype(str)
-    df["week_start"] = (df["date"] - pd.to_timedelta(df["day_of_week"], unit="D")).dt.strftime("%Y-%m-%d")
+    days = pd.DatetimeIndex(df["date"].unique())
+    calendar = pd.DataFrame({
+        "day_of_week": days.dayofweek,  # 0=Monday
+        "day_name": days.strftime("%A"),
+        "month": days.to_period("M").astype(str),
+        "week_start": (days - pd.to_timedelta(days.dayofweek, unit="D")).strftime("%Y-%m-%d"),
+    }, index=days)
+    for column in calendar:
+        df[column] = df["date"].map(calendar[column])
     df["on_time"] = df["delay_severity"] == "On Time"
     df["minor"] = df["delay_severity"] == "Minor"
     df["major"] = df["delay_severity"] == "Major"
@@ -46,35 +82,115 @@ def _on_time_share(df: pd.DataFrame) -> float:
     return round(df["on_time"].sum() / len(df) * 100, 2) if len(df) else 0
 
 
-def build_dashboard(arrivals: pd.DataFrame, now: datetime) -> dict[str, object]:
-    """Filename -> JSON payload for every file in DASHBOARD_FILES."""
-    df = _with_calendar(arrivals)
+def _headline(df: pd.DataFrame) -> dict:
+    """The headline figures shared by the legacy and clean blocks of stats.json."""
     total = len(df)
     last = df["date"].max()
-
-    stats = {
+    return {
         "on_time_percentage": round(df["on_time"].sum() / total * 100, 2) if total else 0,
         "minor_delay_percentage": round(df["minor"].sum() / total * 100, 2) if total else 0,
         "major_delay_percentage": round(df["major"].sum() / total * 100, 2) if total else 0,
         "total_arrivals": total,
-        "avg_delay_minutes": round(float(df["delay_minutes"].mean()), 2),
-        "median_delay_minutes": round(float(df["delay_minutes"].median()), 2),
-        "last_updated": now.isoformat(),
-        "date_range": {"start": df["date"].min().strftime("%Y-%m-%d"), "end": last.strftime("%Y-%m-%d")},
+        "avg_delay_minutes": round(float(df["delay_minutes"].mean()), 2) if total else 0,
+        "median_delay_minutes": round(float(df["delay_minutes"].median()), 2) if total else 0,
         "days_tracked": int(df["date"].nunique()),  # skips days the collector was down
-        "rolling_7d_on_time": _on_time_share(df[df["date"] >= last - pd.Timedelta(days=7)]),
-        "rolling_30d_on_time": _on_time_share(df[df["date"] >= last - pd.Timedelta(days=30)]),
+        "rolling_7d_on_time": _on_time_share(df[df["date"] >= last - pd.Timedelta(days=7)]) if total else 0,
+        "rolling_30d_on_time": _on_time_share(df[df["date"] >= last - pd.Timedelta(days=30)]) if total else 0,
     }
 
-    daily = df.groupby(df["date"].dt.strftime("%Y-%m-%d")).agg(
+
+def _date_range(df: pd.DataFrame) -> dict:
+    return {"start": df["date"].min().strftime("%Y-%m-%d"), "end": df["date"].max().strftime("%Y-%m-%d")}
+
+
+def legacy_stats(con: duckdb.DuckDBPyConnection) -> dict:
+    """The legacy keys of stats.json (every arrival, good or bad) from the ``arrivals`` table.
+
+    The keys and values of ``_headline`` plus ``date_range`` over the whole arrivals
+    frame: shares go through numpy's round as they do there, means through Python's.
+    """
+    names = ["total", "on_time", "minor", "major", "avg_delay", "median_delay", "days", "first_day", "last_day",
+             "n7", "on_time7", "n30", "on_time30"]
+    r = dict(zip(names, con.execute(LEGACY_STATS_SQL).fetchone()))
+    total = r["total"]
+
+    def share(part: int, whole: int):
+        return round(np.int64(part) / whole * 100, 2) if whole else 0
+
+    def day(value) -> str | None:
+        return None if value is None else pd.Timestamp(value).strftime("%Y-%m-%d")
+
+    return {
+        "on_time_percentage": share(r["on_time"], total),
+        "minor_delay_percentage": share(r["minor"], total),
+        "major_delay_percentage": share(r["major"], total),
+        "total_arrivals": total,
+        "avg_delay_minutes": round(float(r["avg_delay"]), 2) if total else 0,
+        "median_delay_minutes": round(float(r["median_delay"]), 2) if total else 0,
+        "days_tracked": int(r["days"]),
+        "rolling_7d_on_time": share(r["on_time7"], r["n7"]) if total else 0,
+        "rolling_30d_on_time": share(r["on_time30"], r["n30"]) if total else 0,
+        "date_range": {"start": day(r["first_day"]), "end": day(r["last_day"])},
+    }
+
+
+def _daily_rows(daily: pd.DataFrame) -> pd.DataFrame:
+    """Per-day totals for daily_performance.json, from a narrow frame rather than a calendar copy."""
+    severity = daily["delay_severity"]
+    frame = pd.DataFrame({
+        "date": pd.to_datetime(daily["date"]), "trip_id": daily["trip_id"],
+        "on_time": severity == "On Time", "minor": severity == "Minor", "major": severity == "Major",
+        "delay_minutes": daily["delay_minutes"], "bad_feed": daily["bad_feed"],
+    })
+    rows = frame.groupby("date").agg(
         total_trips=("trip_id", "count"), on_time_count=("on_time", "sum"), minor_count=("minor", "sum"),
-        major_count=("major", "sum"), avg_delay_min=("delay_minutes", "mean"),
-    ).reset_index()
-    daily["on_time_pct"] = _pct(daily["on_time_count"], daily["total_trips"])
-    daily["minor_pct"] = _pct(daily["minor_count"], daily["total_trips"])
-    daily["major_pct"] = _pct(daily["major_count"], daily["total_trips"])
-    daily["avg_delay_min"] = round(daily["avg_delay_min"], 2)
-    daily = daily.sort_values("date")
+        major_count=("major", "sum"), avg_delay_min=("delay_minutes", "mean"), bad_feed=("bad_feed", "max"),
+    )
+    rows.index = rows.index.strftime("%Y-%m-%d").rename("date")
+    return rows.reset_index()
+
+
+def _nullable(value):
+    return None if pd.isna(value) else value
+
+
+def build_dashboard(arrivals: pd.DataFrame, now: datetime, legacy: dict | None = None,
+                    daily: pd.DataFrame | None = None) -> dict[str, object]:
+    """Filename -> JSON payload for every file in DASHBOARD_FILES.
+
+    ``arrivals`` is the clean frame and feeds every file except the legacy keys of
+    stats.json (``legacy``, the ``legacy_stats`` dict over all arrivals; defaults to
+    the same figures over ``arrivals``) and daily_performance.json (``daily``, clean
+    rows including bad-feed days, flagged by a ``bad_feed`` column; defaults to
+    ``arrivals`` with no bad days). The input frames are not modified.
+    """
+    df = _with_calendar(arrivals)
+    if daily is None:
+        daily = df.assign(bad_feed=False)
+
+    old_stats = {**_headline(df), "date_range": _date_range(df)} if legacy is None else legacy
+    clean_stats = _headline(df)
+    clean_stats["bad_feed_days"] = int(pd.to_datetime(daily.loc[daily["bad_feed"].astype(bool), "date"]).nunique())
+    clean_stats = {k: clean_stats[k] for k in (
+        "on_time_percentage", "minor_delay_percentage", "major_delay_percentage", "total_arrivals",
+        "avg_delay_minutes", "median_delay_minutes", "days_tracked", "bad_feed_days",
+        "rolling_7d_on_time", "rolling_30d_on_time")}
+    stats = {
+        **{k: old_stats[k] for k in ("on_time_percentage", "minor_delay_percentage", "major_delay_percentage",
+                                     "total_arrivals", "avg_delay_minutes", "median_delay_minutes")},
+        "last_updated": now.isoformat(),
+        "date_range": old_stats["date_range"],
+        **{k: old_stats[k] for k in ("days_tracked", "rolling_7d_on_time", "rolling_30d_on_time")},
+        "clean": clean_stats,
+    }
+
+    daily_rows = _daily_rows(daily)
+    daily_rows["on_time_pct"] = _pct(daily_rows["on_time_count"], daily_rows["total_trips"])
+    daily_rows["minor_pct"] = _pct(daily_rows["minor_count"], daily_rows["total_trips"])
+    daily_rows["major_pct"] = _pct(daily_rows["major_count"], daily_rows["total_trips"])
+    daily_rows["avg_delay_min"] = round(daily_rows["avg_delay_min"], 2)
+    daily_rows["bad_feed"] = daily_rows["bad_feed"].astype(bool)
+    daily_rows = daily_rows.sort_values("date")
 
     station = df.groupby(["stop_id", "stop_name"]).agg(
         total_arrivals=("trip_id", "count"), on_time_count=("on_time", "sum"),
@@ -96,6 +212,13 @@ def build_dashboard(arrivals: pd.DataFrame, now: datetime) -> dict[str, object]:
     train["avg_delay_min"] = round(train["avg_delay_min"], 2)
     train["trip_id"] = train["trip_id"].astype(int)
     train = train.sort_values("on_time_pct", ascending=False)
+    league = last_stop_league(df).assign(trip_id=lambda x: x["trip_id"].astype(int)).set_index("trip_id")
+    weekday_runs = df[df["weekday"]].groupby("trip_id")["date"].nunique()  # one last stop per train and day
+    train["last_stop_runs"] = train["trip_id"].map(weekday_runs.rename(index=int)).fillna(0).astype(int)
+    train["last_stop_late_pct"] = train["trip_id"].map(league["late_pct"])
+    train["last_stop_name"] = train["trip_id"].map(league["last_stop_name"])
+    train_rows = [{k: (_nullable(v) if k in ("last_stop_late_pct", "last_stop_name") else v)
+                   for k, v in row.items()} for row in train.to_dict("records")]
 
     heatmap = df.groupby(["day_of_week", "day_name", "hour"]).agg(
         total=("trip_id", "count"), on_time_count=("on_time", "sum"), avg_delay_min=("delay_minutes", "mean"),
@@ -127,9 +250,9 @@ def build_dashboard(arrivals: pd.DataFrame, now: datetime) -> dict[str, object]:
 
     return {
         "stats.json": stats,
-        "daily_performance.json": daily.to_dict("records"),
+        "daily_performance.json": daily_rows.to_dict("records"),
         "station_performance.json": station.to_dict("records"),
-        "train_performance.json": train.to_dict("records"),
+        "train_performance.json": train_rows,
         "hourly_heatmap.json": heatmap.to_dict("records"),
         "commute_analysis.json": commute,
         "weekly_summary.json": summary("week_start"),
@@ -176,13 +299,13 @@ def commute_figure(arrivals: pd.DataFrame) -> go.Figure:
     return fig
 
 
-def write_json_atomic(path: Path, payload, indent: int | None = None) -> None:
+def write_json_atomic(path: Path, payload, indent: int | None = None, allow_nan: bool = True) -> None:
     """Write via a temp file and rename, so the 02:30 website export never reads half a file."""
     path = Path(path)
     fd, tmp = tempfile.mkstemp(dir=path.parent, prefix=f".{path.name}.", suffix=".tmp")
     try:
         with os.fdopen(fd, "w", encoding="utf-8", newline="\n") as f:
-            json.dump(payload, f, indent=indent)
+            json.dump(payload, f, indent=indent, allow_nan=allow_nan)
         os.replace(tmp, path)
     except BaseException:
         os.unlink(tmp)
@@ -196,13 +319,14 @@ def write_html_atomic(path: Path, fig: go.Figure) -> None:
     os.replace(tmp, path)
 
 
-def write_dashboard(out_dir: Path, arrivals: pd.DataFrame, now: datetime) -> list[str]:
+def write_dashboard(out_dir: Path, arrivals: pd.DataFrame, now: datetime, legacy: dict | None = None,
+                    daily: pd.DataFrame | None = None) -> list[str]:
     """Write the dashboard JSON (static/data) and the two plots (static/plots). Returns file names."""
     data_dir, plots_dir = Path(out_dir) / "data", Path(out_dir) / "plots"
     data_dir.mkdir(parents=True, exist_ok=True)
     plots_dir.mkdir(parents=True, exist_ok=True)
     pretty = {"stats.json", "commute_analysis.json"}  # indented in the legacy output
-    for name, payload in build_dashboard(arrivals, now).items():
+    for name, payload in build_dashboard(arrivals, now, legacy, daily).items():
         write_json_atomic(data_dir / name, payload, indent=2 if name in pretty else None)
     write_html_atomic(plots_dir / "daily_stats.html", daily_stats_figure(arrivals))
     write_html_atomic(plots_dir / "commute_delay.html", commute_figure(arrivals))

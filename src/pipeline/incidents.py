@@ -32,20 +32,13 @@ def _clean_station(name) -> str:
     return name.replace(" Caltrain Station", "").replace(" Northbound", "").replace(" Southbound", "")
 
 
-def _held_station(points: list[dict], stations: list[dict], default: str) -> str:
-    """Nearest station to the first stretch of 5 points spanning < 0.3 km, if within 0.5 km."""
-    dists = [p["distance"] for p in points]
-    for i in range(len(dists) - 4):
-        window = dists[i:i + 5]
-        if max(window) - min(window) < 0.3:
-            center = sum(window) / len(window)
-            nearest = min(stations, key=lambda s: abs(s["distance"] - center))
-            return nearest["name"] if abs(nearest["distance"] - center) < 0.5 else default
-    return default
+def project_trajectories(gps: pd.DataFrame, shape_points) -> list[dict]:
+    """Each train's pings as km along the route: ``[{trip_id, direction, points}]``, time order.
 
-
-def _trajectories(gps: pd.DataFrame, shape_points, delayed: set[str], root_cause: str,
-                  date_major: pd.DataFrame) -> list[dict]:
+    ``gps`` has ``trip_id, vehicle_lat, vehicle_lon, timestamp`` (datetimes). Trains
+    with fewer than three pings are dropped. ``direction`` is "SB" when the train
+    ends further from San Francisco than it started.
+    """
     gps = gps.assign(distance=(project_to_route_many(gps["vehicle_lat"], gps["vehicle_lon"], shape_points)
                                / 1000).round(2))
     out = []
@@ -55,14 +48,28 @@ def _trajectories(gps: pd.DataFrame, shape_points, delayed: set[str], root_cause
             continue
         points = [{"time": t.strftime("%H:%M:%S"), "distance": float(d)}
                   for t, d in zip(trip_gps["timestamp"], trip_gps["distance"])]
+        out.append({"trip_id": trip_id,
+                    "direction": "SB" if points[-1]["distance"] > points[0]["distance"] else "NB",
+                    "points": points})
+    return out
+
+
+def thin_points(points: list[dict]) -> list[dict]:
+    """Every fifth point plus the last, to keep the JSON small for trains nobody needs in detail."""
+    return points[::5] + [points[-1]] if len(points) > 10 else points
+
+
+def _trajectories(gps: pd.DataFrame, shape_points, delayed: set[str], root_cause: str,
+                  date_major: pd.DataFrame) -> list[dict]:
+    out = []
+    for trajectory in project_trajectories(gps, shape_points):
+        trip_id = trajectory["trip_id"]
         anomalous = trip_id in delayed
         delays = date_major.loc[date_major["trip_id"] == trip_id, "delay_minutes"]
-        if not anomalous and len(points) > 10:
-            points = points[::5] + [points[-1]]  # keep the JSON small for normal trains
         out.append({
             "trip_id": trip_id,
-            "direction": "SB" if points[-1]["distance"] > points[0]["distance"] else "NB",
-            "points": points,
+            "direction": trajectory["direction"],
+            "points": trajectory["points"] if anomalous else thin_points(trajectory["points"]),
             "is_anomalous": anomalous,
             "is_cascading": anomalous and trip_id != root_cause,
             "max_delay_min": round(float(delays.max()) if not delays.empty else 0.0, 1),
@@ -71,7 +78,8 @@ def _trajectories(gps: pd.DataFrame, shape_points, delayed: set[str], root_cause
 
 
 def detect_incidents(arrivals: pd.DataFrame, gps_for_dates: GpsLoader, station_meta: list[dict],
-                     shape_points: list[tuple], top_n: int = 25) -> tuple[list[dict], dict[str, dict]]:
+                     shape_points: list[tuple], top_n: int = 25,
+                     network_stops: pd.DataFrame | None = None) -> tuple[list[dict], dict[str, dict]]:
     df = arrivals.assign(date=pd.to_datetime(arrivals["date"]).dt.date, trip_id=arrivals["trip_id"].astype(str))
     major = df[df["delay_minutes"] >= 15]
     if major.empty:
@@ -95,6 +103,13 @@ def detect_incidents(arrivals: pd.DataFrame, gps_for_dates: GpsLoader, station_m
                              trip_id=gps_all["trip_id"].astype(str)).dropna(subset=["timestamp"])
     gps_by_day = dict(tuple(gps_all.groupby(gps_all["timestamp"].dt.date)))
 
+    held_by_day = {}
+    if network_stops is not None and not network_stops.empty:
+        stops = network_stops[network_stops["is_network_stop"].astype(bool)].sort_values("t_start")
+        for stop_day, held in zip(pd.to_datetime(stops["date"]).dt.date, stops["held_near"]):
+            if stop_day not in held_by_day:  # the earliest network stop of the day
+                held_by_day[stop_day] = held if isinstance(held, str) else None
+
     incidents, trajectories = [], {}
     for _, row in days.iterrows():
         day, day_str = row["date"], str(row["date"])
@@ -115,11 +130,6 @@ def detect_incidents(arrivals: pd.DataFrame, gps_for_dates: GpsLoader, station_m
         trajs = _trajectories(gps, shape_points, set(date_major["trip_id"]), root_train, date_major)
         if not trajs:
             continue
-        held = root_station
-        for traj in trajs:
-            if traj["trip_id"] == root_train and len(traj["points"]) >= 5:
-                held = _held_station(traj["points"], stations, root_station)
-
         incidents.append({
             "id": inc_id,
             "date": day_str,
@@ -130,8 +140,7 @@ def detect_incidents(arrivals: pd.DataFrame, gps_for_dates: GpsLoader, station_m
             "avg_delay_min": round(float(row["avg_delay"]), 1),
             "on_time_pct": float(row["on_time_pct"]),
             "severity_score": int(row["severity_score"]),
-            "root_cause_train": root_train,
-            "root_cause_station": held,
+            "held_near": held_by_day.get(day),
         })
         trajectories[inc_id] = {"incident_id": inc_id, "stations": stations, "trajectories": trajs}
 

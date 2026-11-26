@@ -3,7 +3,9 @@ from datetime import date, datetime
 import pandas as pd
 import pytest
 
-from src.pipeline.arrivals import load_arrivals, open_store, update_arrivals
+import duckdb
+
+from src.pipeline.arrivals import SCHEMA, load_arrivals, open_store, update_arrivals
 from tests.pipeline_fixtures import SF, TWENTY_SECOND, add_pings, make_db, make_feed
 
 DAY = "2026-03-04"  # a Wednesday
@@ -228,3 +230,141 @@ def test_arrival_time_hour_is_zero_padded(tmp_path):
     row = one(env, "101", SF[0])
     assert row.arrival_time == "08:00:00"
     assert row.delay_minutes == pytest.approx(3.0)
+
+
+def test_signed_delay_and_distance_are_kept(env):
+    other_day = "2026-03-05"
+    add_pings(env["conn"],
+              ping("101", SF[0], AT_SF, f"{DAY} 07:58:00"),
+              ping("101", SF[0], NEAR_SF, f"{other_day} 08:03:00"))
+    run(env)
+    early = one(env, "101", SF[0])
+    assert early.delay_signed == pytest.approx(-2.0)
+    assert early.delay_minutes == 0.0  # the legacy column stays clamped
+    assert early.dist_m < 5
+    assert early.sched_ts == datetime(2026, 3, 4, 8, 0)
+    assert one(env, "101", SF[0], other_day).dist_m == pytest.approx(270, abs=15)
+
+
+def test_stop_rank_service_and_direction(env):
+    add_pings(env["conn"],
+              ping("101", SF[0], AT_SF, f"{DAY} 08:00:00"),
+              ping("101", TWENTY_SECOND[0], AT_22ND, f"{DAY} 08:05:00"))
+    run(env)
+    first, second = one(env, "101", SF[0]), one(env, "101", TWENTY_SECOND[0])
+    assert (first.stop_rank, second.stop_rank) == (1, 2)
+    assert (first.n_stops, second.n_stops) == (2, 2)
+    for row in (first, second):
+        assert row.route_id == "Local Weekday"
+        assert row.direction_id == "1"
+
+
+def test_scheduled_trips_skip_after_midnight(env):
+    add_pings(env["conn"], ping("101", SF[0], AT_SF, f"{DAY} 08:00:00"))
+    run(env)
+    trips = env["store"].execute(
+        "SELECT * FROM scheduled_trips WHERE date = DATE '2026-03-04' ORDER BY trip_id").df()
+    assert list(trips.trip_id) == ["101"]
+    row = trips.iloc[0]
+    assert row.dep_ts == datetime(2026, 3, 4, 8, 0)
+    assert row.n_stops == 2
+    assert (row.route_id, row.direction_id) == ("Local Weekday", "1")
+
+
+def test_scheduled_trips_are_rewritten_not_duplicated(env):
+    add_pings(env["conn"], ping("101", SF[0], AT_SF, f"{DAY} 08:00:00"))
+    run(env)
+    run(env, full=True)
+    assert env["store"].execute("SELECT count(*) FROM scheduled_trips WHERE date = DATE '2026-03-04'").fetchone()[0] == 1
+
+
+LEGACY_SCHEMA = """
+CREATE TABLE arrivals (
+    date DATE,
+    trip_id VARCHAR,
+    stop_id VARCHAR,
+    stop_name VARCHAR,
+    parent_station VARCHAR,
+    arrival_time VARCHAR,
+    actual_arrival_time TIMESTAMP,
+    delay_minutes DOUBLE,
+    is_delayed BOOLEAN,
+    delay_severity VARCHAR,
+    commute_period VARCHAR,
+    hour INTEGER,
+    ping_count INTEGER,
+    feed_version VARCHAR
+);
+CREATE TABLE processed_days (
+    date DATE PRIMARY KEY,
+    feed_version VARCHAR
+);
+"""
+
+
+def test_old_store_is_migrated(tmp_path):
+    path = str(tmp_path / "old.duckdb")
+    old = duckdb.connect(path)
+    old.execute(LEGACY_SCHEMA)
+    old.execute("INSERT INTO processed_days VALUES (DATE '2026-03-04', '1')")
+    old.close()
+
+    store = open_store(path)
+    columns = [r[0] for r in store.execute("DESCRIBE arrivals").fetchall()]
+    assert "delay_signed" in columns
+    assert store.execute("SELECT count(*) FROM processed_days").fetchone()[0] == 0
+    store.close()
+
+    # A store that already has the new columns is left alone.
+    store = open_store(path)
+    store.execute("INSERT INTO processed_days VALUES (DATE '2026-03-04', '1')")
+    store.close()
+    assert open_store(path).execute("SELECT count(*) FROM processed_days").fetchone()[0] == 1
+
+
+def test_feed_without_route_columns_still_scores(tmp_path):
+    feeds = tmp_path / "feeds"
+    folder = make_feed(feeds)
+    (folder / "trips.txt").write_text("trip_id,service_id,trip_short_name\nt101,all,101\n", encoding="utf-8")
+    env = {"feeds": feeds, "db": tmp_path / "t.db", "store": open_store(str(tmp_path / "a.duckdb"))}
+    add_pings(make_db(env["db"]), ping("101", SF[0], AT_SF, f"{DAY} 08:00:00"))
+    run(env)
+    row = one(env, "101", SF[0])
+    assert row.route_id == "" and row.direction_id == ""
+    assert row.stop_rank == 1
+
+
+def test_feed_health_per_day(env):
+    add_pings(env["conn"],
+              ping("101", SF[0], AT_SF, f"{DAY} 07:58:00"),
+              ping("101", SF[0], AT_SF, f"{DAY} 07:59:00"),
+              ping("101", SF[0], NEAR_SF, f"{DAY} 08:00:00"))
+    run(env)
+    row = env["store"].execute("SELECT * FROM feed_health WHERE date = DATE '2026-03-04'").df().iloc[0]
+    assert row.pings == 3
+    assert row.polls == 3
+    assert row.trains == 1
+    assert row.vehicles_per_poll == pytest.approx(1.0)
+    assert row.pos_change_share == pytest.approx(0.5)
+    assert row.first_ping == datetime(2026, 3, 4, 7, 58) and row.last_ping == datetime(2026, 3, 4, 8, 0)
+
+
+def test_feed_health_is_rewritten_not_duplicated(env):
+    add_pings(env["conn"], ping("101", SF[0], AT_SF, f"{DAY} 08:00:00"))
+    run(env)
+    add_pings(env["conn"], ping("101", SF[0], NEAR_SF, f"{DAY} 08:01:00"))
+    run(env, full=True)
+    rows = env["store"].execute("SELECT pings FROM feed_health WHERE date = DATE '2026-03-04'").fetchall()
+    assert rows == [(2,)]
+
+
+def test_store_missing_feed_health_is_recomputed(tmp_path):
+    path = str(tmp_path / "half.duckdb")
+    old = duckdb.connect(path)
+    old.execute(SCHEMA)
+    old.execute("DROP TABLE feed_health")
+    old.execute("INSERT INTO processed_days VALUES (DATE '2026-03-04', '1')")
+    old.close()
+    store = open_store(path)
+    assert store.execute("SELECT count(*) FROM processed_days").fetchone()[0] == 0
+    assert store.execute("SELECT count(*) FROM feed_health").fetchone()[0] == 0

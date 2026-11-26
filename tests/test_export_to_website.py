@@ -25,3 +25,25 @@ def test_export_plots_copies_build_plots_and_removes_stale_ones(tmp_path, monkey
 def test_build_plots_match_what_the_build_writes(tmp_path):
     write_dashboard(tmp_path, arrivals(), NOW)
     assert sorted(p.name for p in (tmp_path / "plots").iterdir()) == sorted(export_to_website.BUILD_PLOTS)
+
+
+def test_export_skips_missing_story_files(tmp_path, monkeypatch, capsys):
+    from src.pipeline.dashboard import DASHBOARD_FILES
+    src, out = tmp_path / "data", tmp_path / "site"
+    src.mkdir()
+    out.mkdir()
+    for name in DASHBOARD_FILES + ["incidents.json", "incident_trajectories.json"]:
+        (src / name).write_text("{}")
+    monkeypatch.setattr(export_to_website, "SOURCE_DATA", src)
+    monkeypatch.setattr(export_to_website, "OUTPUT_DIR", out)
+
+    export_to_website.export_dashboard_data()
+
+    assert not (out / "stories.json").exists()
+    assert "Missing stories.json" in capsys.readouterr().out
+    assert (out / "stats.json").exists()
+
+    (src / "stories.json").write_text("{}")
+    (src / "stories_example_day.json").write_text("{}")
+    export_to_website.export_dashboard_data()
+    assert (out / "stories.json").exists() and (out / "stories_example_day.json").exists()

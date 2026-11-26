@@ -1,11 +1,15 @@
+import json
 from datetime import datetime
 
+import duckdb
 import numpy as np
 import pandas as pd
 import pytest
 
+from src.pipeline.clean import last_stop_league
 from src.pipeline.dashboard import (
-    DASHBOARD_FILES, build_dashboard, commute_shares, daily_severity_shares, write_dashboard, write_json_atomic,
+    DASHBOARD_FILES, _headline, _with_calendar, build_dashboard, commute_shares, daily_severity_shares, legacy_stats,
+    write_dashboard, write_json_atomic,
 )
 
 
@@ -23,10 +27,70 @@ def arrivals():
                                      "delay_severity", "commute_period", "hour", "ping_count"])
     df["date"] = pd.to_datetime(df["date"])
     df["is_delayed"] = df["delay_minutes"] > 4
+    df["late4"] = df["is_delayed"]
+    df["weekday"] = df["date"].dt.dayofweek < 5
+    df["stop_rank"] = 2
+    df["station"] = df["stop_name"]
+    df["service"] = "Local"
+    df["direction"] = "NB"
+    df["bad_feed"] = False
     return df
 
 
+def league_frame(runs_523=80, runs_305=10):
+    """Weekday last-stop runs: 523 is late on half of them, 305 has too few runs for the league."""
+    out = pd.DataFrame({
+        "date": [pd.Timestamp("2026-01-05") + pd.Timedelta(days=i) for trip, n in (("523", runs_523), ("305", runs_305))
+                 for i in range(n)],
+        "trip_id": [trip for trip, n in (("523", runs_523), ("305", runs_305)) for i in range(n)],
+        "late": [i % 2 == 0 for trip, n in (("523", runs_523), ("305", runs_305)) for i in range(n)],
+    })
+    out["stop_id"] = "70021"
+    out["stop_name"] = "22nd Street"
+    out["delay_minutes"] = out["late"].map({True: 6.0, False: 0.0})
+    out["delay_severity"] = out["late"].map({True: "Minor", False: "On Time"})
+    out["commute_period"] = "Morning"
+    out["hour"] = 8
+    out["ping_count"] = 1
+    out["is_delayed"] = out["late"]
+    out["late4"] = out["late"]
+    out["weekday"] = True
+    out["stop_rank"] = 3
+    out["station"] = "22nd Street"
+    out["service"] = "Local"
+    out["direction"] = "NB"
+    out["bad_feed"] = False
+    return out.drop(columns="late")
+
+
 NOW = datetime(2026, 3, 8, 0, 5)
+
+
+def legacy_of(df: pd.DataFrame) -> dict:
+    """``legacy_stats`` over ``df`` as the ``arrivals`` table (DATE dates, as in the store)."""
+    con = duckdb.connect()
+    con.register("frame", df.assign(date=pd.to_datetime(df["date"]).dt.date))
+    con.execute("CREATE TABLE arrivals AS SELECT * FROM frame")
+    return legacy_stats(con)
+
+
+def pandas_legacy(df: pd.DataFrame) -> dict:
+    """The legacy stats.json keys as build_dashboard computed them from the whole arrivals frame."""
+    old = _with_calendar(df)
+    return {**_headline(old), "date_range": {"start": old["date"].min().strftime("%Y-%m-%d"),
+                                             "end": old["date"].max().strftime("%Y-%m-%d")}}
+
+
+def many_arrivals(n=5000, seed=7) -> pd.DataFrame:
+    """Legacy-shaped rows over 60 days: clamped delays, severities from the delay, an even row count."""
+    rng = np.random.default_rng(seed)
+    delay = np.round(np.clip(rng.gamma(0.6, 6.0, n) - 1.0, 0, None), 4)
+    return pd.DataFrame({
+        "date": pd.Timestamp("2026-01-01") + pd.to_timedelta(rng.integers(0, 60, n), unit="D"),
+        "trip_id": rng.choice(["101", "103", "523"], n),
+        "delay_minutes": delay,
+        "delay_severity": np.where(delay > 15, "Major", np.where(delay > 4, "Minor", "On Time")),
+    })
 
 
 def test_produces_every_website_file():
@@ -54,7 +118,79 @@ def test_stats():
         "days_tracked": 3,  # days with arrivals, not the calendar span
         "rolling_7d_on_time": 50.0,
         "rolling_30d_on_time": 50.0,
+        "clean": {
+            "on_time_percentage": 50.0, "minor_delay_percentage": 33.33, "major_delay_percentage": 16.67,
+            "total_arrivals": 6, "avg_delay_minutes": 6.33, "median_delay_minutes": 4.0, "days_tracked": 3,
+            "bad_feed_days": 0, "rolling_7d_on_time": 50.0, "rolling_30d_on_time": 50.0,
+        },
     }
+
+
+def test_stats_clean_block_differs_from_legacy():
+    clean = arrivals().iloc[[0, 3, 4]]  # On Time, On Time, On Time
+    stats = build_dashboard(clean, NOW, legacy=legacy_of(arrivals()))["stats.json"]
+    assert stats["on_time_percentage"] == 50.0 and stats["total_arrivals"] == 6  # legacy keys use legacy
+    assert stats["clean"] == {
+        "on_time_percentage": 100.0, "minor_delay_percentage": 0.0, "major_delay_percentage": 0.0,
+        "total_arrivals": 3, "avg_delay_minutes": 0.67, "median_delay_minutes": 0.0,
+        "days_tracked": 2, "bad_feed_days": 0, "rolling_7d_on_time": 100.0, "rolling_30d_on_time": 100.0,
+    }
+
+
+def test_daily_rows_flag_bad_feed_days():
+    clean = arrivals()
+    daily = clean.copy()
+    daily["bad_feed"] = daily["date"] == pd.Timestamp("2026-03-03")
+    out = build_dashboard(clean[clean["date"] != pd.Timestamp("2026-03-03")], NOW, daily=daily)
+    rows = {r["date"]: r for r in out["daily_performance.json"]}
+    assert [rows[d]["bad_feed"] for d in sorted(rows)] == [False, True, False]
+    assert rows["2026-03-03"]["total_trips"] == 2  # unmasked figures
+    clean_stats = out["stats.json"]["clean"]
+    assert clean_stats["bad_feed_days"] == 1
+    assert clean_stats["total_arrivals"] == 4 and clean_stats["days_tracked"] == 2
+
+
+def test_train_last_stop_columns():
+    trains = {t["trip_id"]: t for t in build_dashboard(league_frame(), NOW)["train_performance.json"]}
+    assert trains[523]["last_stop_late_pct"] == 50.0
+    assert trains[523]["last_stop_runs"] == 80
+    assert trains[523]["last_stop_name"] == "22nd Street"
+    assert trains[305]["last_stop_late_pct"] is None
+    assert trains[305]["last_stop_runs"] == 10  # counted, but too few for a late share
+
+
+def test_train_without_weekday_runs_has_zero_last_stop_runs():
+    df = league_frame()
+    df.loc[df["trip_id"] == "305", "weekday"] = False
+    trains = {t["trip_id"]: t for t in build_dashboard(df, NOW)["train_performance.json"]}
+    assert trains[305]["last_stop_runs"] == 0
+    assert trains[305]["last_stop_name"] is None
+
+
+def test_train_whose_service_changes_has_one_league_row():
+    df = league_frame()
+    df.loc[(df["trip_id"] == "523") & (df["date"] >= pd.Timestamp("2026-02-05")), "service"] = "Limited"
+    out = build_dashboard(df, NOW)["train_performance.json"]
+    row = [t for t in out if t["trip_id"] == 523][0]
+    assert row["last_stop_runs"] == 80 and row["last_stop_late_pct"] == 50.0
+    league = last_stop_league(df)
+    assert list(league["trip_id"]).count("523") == 1
+    assert league.set_index("trip_id").loc["523", "runs"] == row["last_stop_runs"]
+
+
+def test_outputs_are_strict_json():
+    df = league_frame()
+    df.loc[df["trip_id"] == "305", ["weekday", "commute_period"]] = [False, "Weekend"]
+    clean = df[df["commute_period"] != "Weekend"]  # no clean Weekend rows; 305 has no clean rows at all
+    legacy = df  # ... but it is still in the legacy frame
+    out = build_dashboard(clean, NOW, legacy=legacy_of(legacy), daily=df)
+    for payload in out.values():
+        json.dumps(payload, allow_nan=False)
+    assert "Weekend" not in out["commute_analysis.json"]
+    assert 305 not in [t["trip_id"] for t in out["train_performance.json"]]
+    # an empty clean frame (the build skips it, but the function must still emit strict JSON)
+    for payload in build_dashboard(df.iloc[:0], NOW, legacy=legacy_of(legacy), daily=df).values():
+        json.dumps(payload, allow_nan=False)
 
 
 def test_daily_performance():
@@ -62,7 +198,7 @@ def test_daily_performance():
     assert [d["date"] for d in daily] == ["2026-03-02", "2026-03-03", "2026-03-07"]
     assert daily[0] == {"date": "2026-03-02", "total_trips": 3, "on_time_count": 1, "minor_count": 1,
                         "major_count": 1, "avg_delay_min": 8.67, "on_time_pct": 33.3, "minor_pct": 33.3,
-                        "major_pct": 33.3}
+                        "major_pct": 33.3, "bad_feed": False}
 
 
 def test_station_and_train_rankings():
@@ -72,7 +208,8 @@ def test_station_and_train_rankings():
     assert stations[0]["stop_lat"] is None  # legacy frames never carried coordinates
     trains = {t["trip_id"]: t for t in out["train_performance.json"]}
     assert trains[103] == {"trip_id": 103, "total_stops": 2, "on_time_count": 1, "avg_delay_min": 10.0,
-                           "days_observed": 2, "on_time_pct": 50.0}
+                           "days_observed": 2, "on_time_pct": 50.0, "last_stop_runs": 2,
+                           "last_stop_late_pct": None, "last_stop_name": None}
 
 
 def test_commute_heatmap_week_month():
@@ -112,3 +249,24 @@ def test_write_json_atomic_replaces_file(tmp_path):
     write_json_atomic(path, {"a": 1}, indent=2)
     assert path.read_text() == '{\n  "a": 1\n}'
     assert list(tmp_path.iterdir()) == [path]
+
+
+@pytest.mark.parametrize("seed", [7, 8, 9])
+def test_legacy_stats_from_sql_equal_the_pandas_computation(seed):
+    df = many_arrivals(seed=seed)
+    assert legacy_of(df) == pandas_legacy(df)
+    assert json.dumps(legacy_of(df)) == json.dumps(pandas_legacy(df))  # byte-identical in stats.json
+
+
+def test_legacy_stats_on_the_small_fixture():
+    assert legacy_of(arrivals()) == pandas_legacy(arrivals())
+    stats = build_dashboard(arrivals(), NOW, legacy=legacy_of(arrivals()))["stats.json"]
+    assert json.dumps(stats) == json.dumps(build_dashboard(arrivals(), NOW)["stats.json"])
+
+
+def test_build_dashboard_leaves_its_input_frames_alone():
+    clean, daily = arrivals(), arrivals()
+    before = clean.copy(), daily.copy()
+    build_dashboard(clean, NOW, daily=daily)
+    pd.testing.assert_frame_equal(clean, before[0])
+    pd.testing.assert_frame_equal(daily, before[1])

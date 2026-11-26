@@ -25,6 +25,7 @@ sys.path.insert(0, str(ROOT))
 from src.data.gtfs_feeds import (  # noqa: E402
     FEEDS_DIR, _tables, active_service_ids, discover_feeds, feed_for_date, load_stops,
 )
+from src.pipeline.clean import FEED_HEALTH_SQL  # noqa: E402  the pipeline's per-day feed-health rule
 
 DATA = ROOT / "analysis" / "data"
 SQLITE = DATA / "caltrain_lat_long.db"
@@ -103,25 +104,6 @@ SELECT service_date AS date, trip_id, stop_id, stop_name, parent_station,
 FROM ranked WHERE rn = 1
 """
 
-FEED_HEALTH_SQL = """
-WITH p AS (
-    SELECT *, lag(lat) OVER w AS plat, lag(lon) OVER w AS plon
-    FROM pings
-    WINDOW w AS (PARTITION BY trip_id, date ORDER BY ts)
-)
-SELECT date,
-       count(*) AS pings,
-       count(DISTINCT date_trunc('minute', ts)) AS polls,
-       count(*) * 1.0 / count(DISTINCT date_trunc('minute', ts)) AS vehicles_per_poll,
-       avg(CASE WHEN plat IS NULL THEN NULL WHEN lat <> plat OR lon <> plon THEN 1.0 ELSE 0.0 END) AS pos_change_share,
-       count(DISTINCT trip_id) AS trains,
-       min(ts) AS first_ping, max(ts) AS last_ping,
-       sum(CASE WHEN lat < 1 THEN 1 ELSE 0 END) AS zero_gps
-FROM p
-WHERE stop_id <> 'unknown' AND length(trip_id) <= 3
-GROUP BY date ORDER BY date
-"""
-
 
 def main() -> None:
     t0 = time.time()
@@ -155,7 +137,9 @@ def main() -> None:
     n = con.execute("SELECT count(*) FROM arrivals").fetchone()[0]
     print(f"arrivals {n:,}  ({time.time()-t0:.0f}s)", flush=True)
 
+    con.register("todo_days", pd.DataFrame({"date": days}))  # every ping day (the pipeline scores a few)
     con.execute(f"CREATE TABLE feed_health AS {FEED_HEALTH_SQL}")
+    con.unregister("todo_days")
     # Raw pings copied in for trajectory work (only real train numbers, known stops)
     con.execute("""CREATE TABLE pings AS SELECT id, trip_id, stop_id, lat, lon, ts, date FROM pings
                    WHERE stop_id <> 'unknown' AND length(trip_id) <= 3""")

@@ -15,6 +15,8 @@ DEFAULT_CALLS = [
     ("103", SF[0], "24:10:00"),
 ]
 
+DEFAULT_ROUTES = {"101": ("Local Weekday", "1"), "103": ("Express", "1")}
+
 
 def _write(folder: Path, name: str, header: list[str], rows: list[tuple]) -> None:
     with open(folder / f"{name}.txt", "w", newline="", encoding="utf-8") as f:
@@ -24,8 +26,13 @@ def _write(folder: Path, name: str, header: list[str], rows: list[tuple]) -> Non
 
 
 def make_feed(root: Path, name: str = "v1", version: str = "1", start: str = "20260101",
-              end: str = "20261231", calls=DEFAULT_CALLS) -> Path:
-    """A one-service GTFS feed (every day) under root/name."""
+              end: str = "20261231", calls=DEFAULT_CALLS,
+              routes: dict[str, tuple[str, str]] | None = None) -> Path:
+    """A one-service GTFS feed (every day) under root/name.
+
+    ``routes`` maps a train number to its ``(route_id, direction_id)``.
+    """
+    routes = DEFAULT_ROUTES if routes is None else routes
     folder = root / name
     folder.mkdir(parents=True)
     _write(folder, "feed_info", ["feed_version", "feed_start_date", "feed_end_date"], [(version, start, end)])
@@ -36,7 +43,8 @@ def make_feed(root: Path, name: str = "v1", version: str = "1", start: str = "20
             "start_date", "end_date"],
            [("all", 1, 1, 1, 1, 1, 1, 1, start, end)])
     trains = sorted({c[0] for c in calls})
-    _write(folder, "trips", ["trip_id", "service_id", "trip_short_name"], [(f"t{t}", "all", t) for t in trains])
+    _write(folder, "trips", ["trip_id", "service_id", "trip_short_name", "route_id", "direction_id"],
+           [(f"t{t}", "all", t, *routes.get(t, ("", ""))) for t in trains])
     _write(folder, "stop_times", ["trip_id", "stop_id", "stop_sequence", "arrival_time", "departure_time"],
            [(f"t{t}", s, i, a, a) for i, (t, s, a) in enumerate(calls, 1)])
     return folder

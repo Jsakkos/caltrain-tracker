@@ -17,10 +17,13 @@ from zoneinfo import ZoneInfo
 
 import pandas as pd
 
-from src.data.gtfs_feeds import FEEDS_DIR
-from src.pipeline.arrivals import load_arrivals, open_store, update_arrivals
-from src.pipeline.dashboard import write_dashboard, write_json_atomic
+from src.data.gtfs_feeds import FEEDS_DIR, load_stops
+from src.pipeline.arrivals import open_store, update_arrivals
+from src.pipeline.clean import load_clean, register_views
+from src.pipeline.dashboard import legacy_stats, write_dashboard, write_json_atomic
 from src.pipeline.incidents import detect_incidents
+from src.pipeline.network_stops import COLUMNS as NETWORK_STOP_COLUMNS, detect_network_stops, never_ran
+from src.pipeline.stories import build_stories, example_day, validate_stories
 from src.utils.geo_utils import load_shape_points
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -61,25 +64,71 @@ def build(db: Path, store_path: Path, out: Path, feeds_root: Path = FEEDS_DIR,
     store = open_store(str(store_path))
     try:
         days = update_arrivals(store, str(db), feeds_root, full=full, today=now.date())
-        arrivals = load_arrivals(store)
+        register_views(store)
         timings["arrivals"] = time.monotonic() - started
-        log.info("Recomputed %d day(s); %d arrivals in total", len(days), len(arrivals))
+
+        # SQL only, so it runs before the build holds any frame: DuckDB's working memory for
+        # the ping scan and the pandas frames below are never needed at the same time. A failure
+        # here costs the incidents their held_near and the stories their network stops, not the build.
+        started = time.monotonic()
+        cancellations = None
+        try:
+            cancellations = never_ran(store)  # once a night: the detector and the stories share it
+            network_stops = detect_network_stops(store, load_stops(feeds_root), cancellations)
+        except Exception:
+            log.exception("network-stop step failed; carrying on without network stops")
+            network_stops = pd.DataFrame(columns=NETWORK_STOP_COLUMNS)
+        timings["network_stops"] = time.monotonic() - started
+
+        # One frame of clean arrivals on every day; the clean subset is its good-feed rows, and the
+        # legacy all-arrivals figures come from SQL, so the build never holds the arrivals table.
+        started = time.monotonic()
+        legacy = legacy_stats(store)
+        daily = load_clean(store, include_bad_feed=True)
+        arrivals = daily[~daily["bad_feed"]]
+        arrivals.index = pd.RangeIndex(len(arrivals))
+        timings["load"] = time.monotonic() - started
+        log.info("Recomputed %d day(s); %d arrivals (%d clean) in total",
+                 len(days), legacy["total_arrivals"], len(arrivals))
         if arrivals.empty:
-            log.warning("No arrivals; leaving the existing website files alone")
+            log.warning("No clean arrivals; leaving the existing website files alone")
             return {"days": days, "arrivals": 0, "timings": timings}
 
         started = time.monotonic()
-        write_dashboard(out, arrivals, now)
+        write_dashboard(out, arrivals, now, legacy=legacy, daily=daily)
+        del daily
         timings["dashboard"] = time.monotonic() - started
 
         started = time.monotonic()
         station_meta = json.loads(Path(station_meta_path).read_text(encoding="utf-8"))["stations"]
         shape = load_shape_points(str(gtfs_dir))
-        incidents, trajectories = detect_incidents(arrivals, gps_loader(store), station_meta, shape)
+        incidents, trajectories = detect_incidents(arrivals, gps_loader(store), station_meta, shape,
+                                                  network_stops=network_stops)
         write_json_atomic(Path(out) / "data" / "incidents.json", incidents, indent=2)
         write_json_atomic(Path(out) / "data" / "incident_trajectories.json", trajectories)
         timings["incidents"] = time.monotonic() - started
         log.info("%d incidents", len(incidents))
+
+        # Never let the stories step break the build or the other files: on any failure the
+        # previous stories files stay exactly as they were.
+        started = time.monotonic()
+        try:
+            if cancellations is None:
+                cancellations = never_ran(store)
+            payload = build_stories(store, network_stops, cancellations, now)
+            validate_stories(payload)
+            example = example_day(store, gps_loader(store), station_meta, shape, network_stops)
+            # Serialise both first so a bad example payload cannot leave a new stories.json
+            # beside an old example file.
+            json.dumps(payload, allow_nan=False)
+            if example is not None:
+                json.dumps(example, allow_nan=False)
+            write_json_atomic(Path(out) / "data" / "stories.json", payload, indent=2, allow_nan=False)
+            if example is not None:
+                write_json_atomic(Path(out) / "data" / "stories_example_day.json", example, allow_nan=False)
+        except Exception:
+            log.exception("stories step failed; keeping the previous stories files")
+        timings["stories"] = time.monotonic() - started
     finally:
         store.close()
 

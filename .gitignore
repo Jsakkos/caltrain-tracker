@@ -181,6 +181,8 @@ static/data/weekly_summary.json
 static/data/monthly_summary.json
 static/data/incidents.json
 static/data/incident_trajectories.json
+static/data/stories.json
+static/data/stories_example_day.json
 static/plots/daily_stats.html
 static/plots/commute_delay.html
 
